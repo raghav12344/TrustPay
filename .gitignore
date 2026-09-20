@@ -1,0 +1,146 @@
+# ==========================================
+# TrustPay - Root Git Ignore
+# ==========================================
+
+# ------------------------------------------
+# Environment variables / secrets
+# ------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ------------------------------------------
+# Node.js dependencies
+# ------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------
+# Build / production files
+# ------------------------------------------
+dist/
+build/
+coverage/
+.vite/
+
+# ------------------------------------------
+# React / Vite
+# ------------------------------------------
+*.local
+
+# ------------------------------------------
+# Python
+# ------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+env/
+ENV/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Python distribution
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# ------------------------------------------
+# ML models / large generated files
+# ------------------------------------------
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.bin
+
+# ML datasets
+*.csv
+*.parquet
+*.feather
+
+# Keep SQL files tracked
+!database/*.sql
+
+# ------------------------------------------
+# Certificates / security files
+# ------------------------------------------
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+backend/certs/
+ml-service/certs/
+
+# ------------------------------------------
+# Logs
+# ------------------------------------------
+*.log
+logs/
+
+# ------------------------------------------
+# Docker
+# ------------------------------------------
+.docker/
+docker-data/
+docker-volumes/
+
+# ------------------------------------------
+# IDE / Editors
+# ------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+.idea/
+*.iml
+
+# ------------------------------------------
+# OS generated files
+# ------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ------------------------------------------
+# Temporary files
+# ------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ------------------------------------------
+# Database local files
+# ------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+
+# ------------------------------------------
+# Testing
+# ------------------------------------------
+.nyc_output/
+
+# ------------------------------------------
+# Secrets / credentials
+# ------------------------------------------
+secrets/
+credentials/
+*.secret
