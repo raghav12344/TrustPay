@@ -6,3 +6,5 @@ numpy
 scikit-learn
 joblib
 pydantic
+mysql-connector-python
+python-dotenv
