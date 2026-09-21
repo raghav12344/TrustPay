@@ -5,11 +5,14 @@ require("dotenv").config();
 const db = require("./config/database");
 
 const app = express();
-
+const authRoutes = require("./routes/authRoutes");
+const testRoutes = require("./routes/testRoutes");
+const transactionRoutes = require("./routes/transactionRoutes");
 app.use(cors());
 app.use(express.json());
-
-
+app.use("/api/auth", authRoutes);
+app.use("/api/test", testRoutes);
+app.use("/api/transactions", transactionRoutes);
 // ==========================================
 // Health Check
 // ==========================================
