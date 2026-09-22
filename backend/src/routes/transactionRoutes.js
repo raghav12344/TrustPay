@@ -3,6 +3,8 @@ const express = require("express");
 const {
     createTransaction,
     getCustomerTransactions,
+    getFraudAlerts,
+    approveTransaction
 } = require("../controllers/transactionController");
 
 const {
@@ -11,7 +13,18 @@ const {
 } = require("../middleware/authMiddleware");
 
 const router = express.Router();
-
+router.post(
+    "/admin/transactions/:transactionId/approve",
+    authenticate,
+    authorize("ADMIN"),
+    approveTransaction
+);
+router.get(
+    "/admin/fraud-alerts",
+    authenticate,
+    authorize("ADMIN"),
+    getFraudAlerts
+);
 router.post(
     "/",
     authenticate,

@@ -261,9 +261,75 @@ const getCustomerTransactions = async (req, res) => {
         });
     }
 };
+const getFraudAlerts = async (req, res) => {
+    try {
+        const [results] = await db.query(
+            "CALL GetSuspiciousTransactions()"
+        );
 
+        res.json({
+            success: true,
+            alerts: results[0],
+        });
 
+    } catch (error) {
+        console.error("GET FRAUD ALERTS ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch fraud alerts",
+        });
+    }
+};
+const approveTransaction = async (req, res) => {
+    try {
+        const { transactionId } = req.params;
+        const { reason } = req.body;
+
+        const adminId = req.user.userId;
+
+        if (!transactionId) {
+            return res.status(400).json({
+                success: false,
+                message: "Transaction ID is required",
+            });
+        }
+
+        if (!reason) {
+            return res.status(400).json({
+                success: false,
+                message: "Approval reason is required",
+            });
+        }
+
+        await db.query(
+            "CALL ApproveTransaction(?, ?, ?)",
+            [
+                transactionId,
+                adminId,
+                reason,
+            ]
+        );
+
+        res.json({
+            success: true,
+            message: "Transaction approved successfully",
+            transactionId,
+            status: "APPROVED",
+        });
+
+    } catch (error) {
+        console.error("APPROVE TRANSACTION ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to approve transaction",
+        });
+    }
+};
 module.exports = {
     createTransaction,
     getCustomerTransactions,
+    getFraudAlerts,
+    approveTransaction,
 };
