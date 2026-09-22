@@ -85,7 +85,7 @@ def analyze_transaction(context: dict):
 
     try:
         response = _client.models.generate_content(
-            model="gemini-3.6-flash",
+            model="gemini-3.5-flash-lite",
             contents=user_prompt,
             config={
                 "system_instruction": SYSTEM_PROMPT,
