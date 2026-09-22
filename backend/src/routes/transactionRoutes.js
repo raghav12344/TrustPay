@@ -4,7 +4,8 @@ const {
     createTransaction,
     getCustomerTransactions,
     getFraudAlerts,
-    approveTransaction
+    approveTransaction,
+    rejectTransaction,
 } = require("../controllers/transactionController");
 
 const {
@@ -13,6 +14,12 @@ const {
 } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+router.post(
+    "/admin/transactions/:transactionId/reject",
+    authenticate,
+    authorize("ADMIN"),
+    rejectTransaction
+);
 router.post(
     "/admin/transactions/:transactionId/approve",
     authenticate,

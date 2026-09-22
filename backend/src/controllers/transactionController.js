@@ -327,9 +327,56 @@ const approveTransaction = async (req, res) => {
         });
     }
 };
+const rejectTransaction = async (req, res) => {
+    try {
+        const { transactionId } = req.params;
+        const { reason } = req.body;
+
+        const adminId = req.user.userId;
+
+        if (!transactionId) {
+            return res.status(400).json({
+                success: false,
+                message: "Transaction ID is required",
+            });
+        }
+
+        if (!reason) {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required",
+            });
+        }
+
+        await db.query(
+            "CALL RejectTransaction(?, ?, ?)",
+            [
+                transactionId,
+                adminId,
+                reason,
+            ]
+        );
+
+        res.json({
+            success: true,
+            message: "Transaction rejected successfully",
+            transactionId,
+            status: "REJECTED",
+        });
+
+    } catch (error) {
+        console.error("REJECT TRANSACTION ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to reject transaction",
+        });
+    }
+};
 module.exports = {
     createTransaction,
     getCustomerTransactions,
     getFraudAlerts,
     approveTransaction,
+    rejectTransaction,
 };
