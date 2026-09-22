@@ -8,11 +8,10 @@ def get_customer_transactions(
     current_transaction_time: datetime,
 ):
     """
-    Get all transactions belonging to a customer that happened
-    before the current transaction.
+    Get all previous transactions for a customer.
 
-    The current transaction is deliberately excluded to prevent
-    data leakage.
+    Only transactions that occurred before the current transaction
+    are returned to prevent data leakage.
     """
 
     connection = get_db_connection()
@@ -47,9 +46,7 @@ def get_customer_transactions(
             ),
         )
 
-        transactions = cursor.fetchall()
-
-        return transactions
+        return cursor.fetchall()
 
     finally:
         cursor.close()
