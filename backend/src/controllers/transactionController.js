@@ -8,18 +8,35 @@ const {
     saveFraudPrediction,
     createFraudAlert,
 } = require("../services/fraudService");
+
+const {
+    resolveLocation,
+} = require("../services/locationService");
+
+
+// ==========================================================
+// CREATE TRANSACTION
+// ==========================================================
+
 const createTransaction = async (req, res) => {
     try {
         const userId = req.user.userId;
 
+        /*
+         * Device ID comes from the authenticated JWT.
+         * It is NOT trusted from req.body.
+         */
+        const deviceId = req.user.deviceId || null;
+
         const {
             accountId,
-            deviceId,
-            locationId,
             amount,
             transactionType,
             merchant,
+            latitude,
+            longitude,
         } = req.body;
+
 
         // ==========================================
         // Validate required fields
@@ -28,9 +45,11 @@ const createTransaction = async (req, res) => {
         if (!accountId || !amount || !transactionType) {
             return res.status(400).json({
                 success: false,
-                message: "Account, amount and transaction type are required",
+                message:
+                    "Account, amount and transaction type are required",
             });
         }
+
 
         // ==========================================
         // Validate amount
@@ -39,9 +58,11 @@ const createTransaction = async (req, res) => {
         if (Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
-                message: "Transaction amount must be greater than zero",
+                message:
+                    "Transaction amount must be greater than zero",
             });
         }
+
 
         // ==========================================
         // Validate account ownership
@@ -52,56 +73,100 @@ const createTransaction = async (req, res) => {
              FROM accounts
              WHERE account_id = ?
              AND user_id = ?`,
-            [accountId, userId]
+            [
+                accountId,
+                userId,
+            ]
         );
 
         if (accounts.length === 0) {
             return res.status(403).json({
                 success: false,
-                message: "You do not have access to this account",
+                message:
+                    "You do not have access to this account",
             });
         }
 
+
         // ==========================================
-        // Validate device ownership
+        // Validate registered device
         // ==========================================
 
         if (deviceId) {
             const [devices] = await db.query(
-                `SELECT device_id
+                `SELECT
+                    device_id,
+                    is_trusted
                  FROM devices
                  WHERE device_id = ?
                  AND user_id = ?`,
-                [deviceId, userId]
+                [
+                    deviceId,
+                    userId,
+                ]
             );
 
             if (devices.length === 0) {
                 return res.status(403).json({
                     success: false,
-                    message: "You do not have access to this device",
+                    message:
+                        "Registered device not found",
                 });
             }
+
+            /*
+             * Update device activity.
+             */
+            await db.query(
+                `UPDATE devices
+                 SET last_seen = CURRENT_TIMESTAMP
+                 WHERE device_id = ?`,
+                [deviceId]
+            );
         }
 
+
         // ==========================================
-        // Validate location
+        // Resolve location from GPS coordinates
         // ==========================================
 
-        if (locationId) {
-            const [locations] = await db.query(
-                `SELECT location_id
-                 FROM locations
-                 WHERE location_id = ?`,
-                [locationId]
-            );
+        let location = null;
+        let locationId = null;
 
-            if (locations.length === 0) {
+        /*
+         * Location is optional because the user
+         * may deny browser location permission.
+         */
+        if (
+            latitude !== undefined &&
+            latitude !== null &&
+            longitude !== undefined &&
+            longitude !== null
+        ) {
+            try {
+                location = await resolveLocation(
+                    latitude,
+                    longitude
+                );
+
+                if (location) {
+                    locationId = location.locationId;
+                }
+
+            } catch (locationError) {
+                console.error(
+                    "LOCATION RESOLUTION ERROR:",
+                    locationError.message
+                );
+
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid location",
+                    message:
+                        "Invalid location information",
                 });
             }
         }
+
 
         // ==========================================
         // Create transaction as PENDING
@@ -121,8 +186,8 @@ const createTransaction = async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, 'PENDING')`,
             [
                 accountId,
-                deviceId || null,
-                locationId || null,
+                deviceId,
+                locationId,
                 amount,
                 transactionType,
                 merchant || null,
@@ -130,6 +195,7 @@ const createTransaction = async (req, res) => {
         );
 
         const transactionId = result.insertId;
+
 
         // ==========================================
         // Build transaction for ML service
@@ -139,14 +205,23 @@ const createTransaction = async (req, res) => {
 
         const mlTransaction = {
             user_id: userId,
+
             account_id: accountId,
+
             amount: Number(amount),
+
             transaction_type: transactionType,
+
             merchant: merchant || null,
-            transaction_time: transactionTime.toISOString(),
-            device_id: deviceId || null,
-            location_id: locationId || null,
+
+            transaction_time:
+                transactionTime.toISOString(),
+
+            device_id: deviceId,
+
+            location_id: locationId,
         };
+
 
         // ==========================================
         // Run AI / ML fraud analysis
@@ -155,11 +230,15 @@ const createTransaction = async (req, res) => {
         let analysis;
 
         try {
-            analysis = await analyzeTransaction(mlTransaction);
+            analysis = await analyzeTransaction(
+                mlTransaction
+            );
+
         } catch (mlError) {
             console.error(
                 "ML ANALYSIS ERROR:",
-                mlError.response?.data || mlError.message
+                mlError.response?.data ||
+                mlError.message
             );
 
             return res.status(502).json({
@@ -171,22 +250,27 @@ const createTransaction = async (req, res) => {
             });
         }
 
+
         // ==========================================
         // Save ML prediction
         // ==========================================
 
-        const predictionId = await saveFraudPrediction(
-            transactionId,
-            analysis.ml_prediction
-        );
+        const predictionId =
+            await saveFraudPrediction(
+                transactionId,
+                analysis.ml_prediction
+            );
+
 
         // ==========================================
         // HIGH RISK → CREATE FRAUD ALERT
         // ==========================================
 
         if (
-            analysis.final_decision.final_risk_level === "HIGH" &&
-            analysis.final_decision.action === "ADMIN_REVIEW"
+            analysis.final_decision.final_risk_level ===
+                "HIGH" &&
+            analysis.final_decision.action ===
+                "ADMIN_REVIEW"
         ) {
             await createFraudAlert(
                 transactionId,
@@ -196,12 +280,20 @@ const createTransaction = async (req, res) => {
 
             return res.status(201).json({
                 success: true,
-                message: "Transaction flagged for admin review",
+
+                message:
+                    "Transaction flagged for admin review",
+
                 transactionId,
+
                 status: "PENDING",
+
+                location,
+
                 fraud: analysis,
             });
         }
+
 
         // ==========================================
         // LOW / MEDIUM
@@ -209,22 +301,37 @@ const createTransaction = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: "Transaction analyzed successfully",
+
+            message:
+                "Transaction analyzed successfully",
+
             transactionId,
+
             status: "PENDING",
+
+            location,
+
             fraud: analysis,
         });
 
     } catch (error) {
-        console.error("CREATE TRANSACTION ERROR:", error);
+        console.error(
+            "CREATE TRANSACTION ERROR:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to create transaction",
+            message:
+                "Failed to create transaction",
         });
     }
 };
 
+
+// ==========================================================
+// GET CUSTOMER TRANSACTIONS
+// ==========================================================
 
 const getCustomerTransactions = async (req, res) => {
     try {
@@ -253,14 +360,24 @@ const getCustomerTransactions = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("GET TRANSACTIONS ERROR:", error);
+        console.error(
+            "GET TRANSACTIONS ERROR:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to fetch transactions",
+            message:
+                "Failed to fetch transactions",
         });
     }
 };
+
+
+// ==========================================================
+// GET FRAUD ALERTS - ADMIN
+// ==========================================================
+
 const getFraudAlerts = async (req, res) => {
     try {
         const [results] = await db.query(
@@ -273,14 +390,24 @@ const getFraudAlerts = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("GET FRAUD ALERTS ERROR:", error);
+        console.error(
+            "GET FRAUD ALERTS ERROR:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to fetch fraud alerts",
+            message:
+                "Failed to fetch fraud alerts",
         });
     }
 };
+
+
+// ==========================================================
+// APPROVE TRANSACTION - ADMIN
+// ==========================================================
+
 const approveTransaction = async (req, res) => {
     try {
         const { transactionId } = req.params;
@@ -288,19 +415,36 @@ const approveTransaction = async (req, res) => {
 
         const adminId = req.user.userId;
 
+
+        // ==========================================
+        // Validate transaction ID
+        // ==========================================
+
         if (!transactionId) {
             return res.status(400).json({
                 success: false,
-                message: "Transaction ID is required",
+                message:
+                    "Transaction ID is required",
             });
         }
+
+
+        // ==========================================
+        // Validate reason
+        // ==========================================
 
         if (!reason) {
             return res.status(400).json({
                 success: false,
-                message: "Approval reason is required",
+                message:
+                    "Approval reason is required",
             });
         }
+
+
+        // ==========================================
+        // Execute stored procedure
+        // ==========================================
 
         await db.query(
             "CALL ApproveTransaction(?, ?, ?)",
@@ -311,22 +455,38 @@ const approveTransaction = async (req, res) => {
             ]
         );
 
+
+        // ==========================================
+        // Response
+        // ==========================================
+
         res.json({
             success: true,
-            message: "Transaction approved successfully",
+            message:
+                "Transaction approved successfully",
             transactionId,
             status: "APPROVED",
         });
 
     } catch (error) {
-        console.error("APPROVE TRANSACTION ERROR:", error);
+        console.error(
+            "APPROVE TRANSACTION ERROR:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to approve transaction",
+            message:
+                "Failed to approve transaction",
         });
     }
 };
+
+
+// ==========================================================
+// REJECT TRANSACTION - ADMIN
+// ==========================================================
+
 const rejectTransaction = async (req, res) => {
     try {
         const { transactionId } = req.params;
@@ -334,19 +494,36 @@ const rejectTransaction = async (req, res) => {
 
         const adminId = req.user.userId;
 
+
+        // ==========================================
+        // Validate transaction ID
+        // ==========================================
+
         if (!transactionId) {
             return res.status(400).json({
                 success: false,
-                message: "Transaction ID is required",
+                message:
+                    "Transaction ID is required",
             });
         }
+
+
+        // ==========================================
+        // Validate reason
+        // ==========================================
 
         if (!reason) {
             return res.status(400).json({
                 success: false,
-                message: "Rejection reason is required",
+                message:
+                    "Rejection reason is required",
             });
         }
+
+
+        // ==========================================
+        // Execute stored procedure
+        // ==========================================
 
         await db.query(
             "CALL RejectTransaction(?, ?, ?)",
@@ -357,22 +534,38 @@ const rejectTransaction = async (req, res) => {
             ]
         );
 
+
+        // ==========================================
+        // Response
+        // ==========================================
+
         res.json({
             success: true,
-            message: "Transaction rejected successfully",
+            message:
+                "Transaction rejected successfully",
             transactionId,
             status: "REJECTED",
         });
 
     } catch (error) {
-        console.error("REJECT TRANSACTION ERROR:", error);
+        console.error(
+            "REJECT TRANSACTION ERROR:",
+            error
+        );
 
         res.status(500).json({
             success: false,
-            message: "Failed to reject transaction",
+            message:
+                "Failed to reject transaction",
         });
     }
 };
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
+
 module.exports = {
     createTransaction,
     getCustomerTransactions,

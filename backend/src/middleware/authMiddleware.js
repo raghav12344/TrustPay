@@ -2,16 +2,21 @@ const jwt = require("jsonwebtoken");
 
 const authenticate = (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        const authHeader =
+            req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        if (
+            !authHeader ||
+            !authHeader.startsWith("Bearer ")
+        ) {
             return res.status(401).json({
                 success: false,
-                message: "Authentication token required",
+                message: "Authentication required",
             });
         }
 
-        const token = authHeader.split(" ")[1];
+        const token =
+            authHeader.split(" ")[1];
 
         const decoded = jwt.verify(
             token,
@@ -21,10 +26,17 @@ const authenticate = (req, res, next) => {
         req.user = {
             userId: decoded.userId,
             role: decoded.role,
+            deviceId: decoded.deviceId || null,
         };
 
         next();
+
     } catch (error) {
+        console.error(
+            "AUTHENTICATION ERROR:",
+            error.message
+        );
+
         return res.status(401).json({
             success: false,
             message: "Invalid or expired token",
@@ -41,7 +53,11 @@ const authorize = (...allowedRoles) => {
             });
         }
 
-        if (!allowedRoles.includes(req.user.role)) {
+        if (
+            !allowedRoles.includes(
+                req.user.role
+            )
+        ) {
             return res.status(403).json({
                 success: false,
                 message: "Access denied",
