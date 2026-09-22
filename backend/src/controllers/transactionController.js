@@ -1,5 +1,13 @@
 const db = require("../config/database");
 
+const {
+    analyzeTransaction,
+} = require("../services/mlService");
+
+const {
+    saveFraudPrediction,
+    createFraudAlert,
+} = require("../services/fraudService");
 const createTransaction = async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -13,19 +21,21 @@ const createTransaction = async (req, res) => {
             merchant,
         } = req.body;
 
+        // ==========================================
         // Validate required fields
-        if (
-            !accountId ||
-            !amount ||
-            !transactionType
-        ) {
+        // ==========================================
+
+        if (!accountId || !amount || !transactionType) {
             return res.status(400).json({
                 success: false,
                 message: "Account, amount and transaction type are required",
             });
         }
 
+        // ==========================================
         // Validate amount
+        // ==========================================
+
         if (Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
@@ -33,7 +43,10 @@ const createTransaction = async (req, res) => {
             });
         }
 
-        // Make sure the account belongs to the logged-in customer
+        // ==========================================
+        // Validate account ownership
+        // ==========================================
+
         const [accounts] = await db.query(
             `SELECT account_id
              FROM accounts
@@ -49,7 +62,51 @@ const createTransaction = async (req, res) => {
             });
         }
 
-        // Create transaction
+        // ==========================================
+        // Validate device ownership
+        // ==========================================
+
+        if (deviceId) {
+            const [devices] = await db.query(
+                `SELECT device_id
+                 FROM devices
+                 WHERE device_id = ?
+                 AND user_id = ?`,
+                [deviceId, userId]
+            );
+
+            if (devices.length === 0) {
+                return res.status(403).json({
+                    success: false,
+                    message: "You do not have access to this device",
+                });
+            }
+        }
+
+        // ==========================================
+        // Validate location
+        // ==========================================
+
+        if (locationId) {
+            const [locations] = await db.query(
+                `SELECT location_id
+                 FROM locations
+                 WHERE location_id = ?`,
+                [locationId]
+            );
+
+            if (locations.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid location",
+                });
+            }
+        }
+
+        // ==========================================
+        // Create transaction as PENDING
+        // ==========================================
+
         const [result] = await db.query(
             `INSERT INTO transactions
             (
@@ -72,11 +129,90 @@ const createTransaction = async (req, res) => {
             ]
         );
 
-        res.status(201).json({
+        const transactionId = result.insertId;
+
+        // ==========================================
+        // Build transaction for ML service
+        // ==========================================
+
+        const transactionTime = new Date();
+
+        const mlTransaction = {
+            user_id: userId,
+            account_id: accountId,
+            amount: Number(amount),
+            transaction_type: transactionType,
+            merchant: merchant || null,
+            transaction_time: transactionTime.toISOString(),
+            device_id: deviceId || null,
+            location_id: locationId || null,
+        };
+
+        // ==========================================
+        // Run AI / ML fraud analysis
+        // ==========================================
+
+        let analysis;
+
+        try {
+            analysis = await analyzeTransaction(mlTransaction);
+        } catch (mlError) {
+            console.error(
+                "ML ANALYSIS ERROR:",
+                mlError.response?.data || mlError.message
+            );
+
+            return res.status(502).json({
+                success: false,
+                message:
+                    "Transaction created but fraud analysis failed. Transaction remains pending.",
+                transactionId,
+                status: "PENDING",
+            });
+        }
+
+        // ==========================================
+        // Save ML prediction
+        // ==========================================
+
+        const predictionId = await saveFraudPrediction(
+            transactionId,
+            analysis.ml_prediction
+        );
+
+        // ==========================================
+        // HIGH RISK → CREATE FRAUD ALERT
+        // ==========================================
+
+        if (
+            analysis.final_decision.final_risk_level === "HIGH" &&
+            analysis.final_decision.action === "ADMIN_REVIEW"
+        ) {
+            await createFraudAlert(
+                transactionId,
+                predictionId,
+                analysis.final_decision
+            );
+
+            return res.status(201).json({
+                success: true,
+                message: "Transaction flagged for admin review",
+                transactionId,
+                status: "PENDING",
+                fraud: analysis,
+            });
+        }
+
+        // ==========================================
+        // LOW / MEDIUM
+        // ==========================================
+
+        return res.status(201).json({
             success: true,
-            message: "Transaction created successfully",
-            transactionId: result.insertId,
+            message: "Transaction analyzed successfully",
+            transactionId,
             status: "PENDING",
+            fraud: analysis,
         });
 
     } catch (error) {

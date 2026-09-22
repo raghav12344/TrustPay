@@ -1,44 +1,30 @@
 const express = require("express");
-
-const {
-    authenticate,
-    authorize,
-} = require("../middleware/authMiddleware");
+const axios = require("axios");
 
 const router = express.Router();
+router.get("/ml-test", async (req, res) => {
+    try {
+        const response = await axios.get(
+            `${process.env.ML_SERVICE_URL}/`
+        );
 
-router.get("/profile", authenticate, (req, res) => {
-    res.json({
-        success: true,
-        message: "Authenticated successfully",
-        user: req.user,
-    });
+        res.json({
+            success: true,
+            message: "Node successfully connected to ML service",
+            mlService: response.data,
+        });
+    } catch (error) {
+        console.error(
+            "ML SERVICE TEST ERROR:",
+            error.response?.data || error.message
+        );
+
+        res.status(500).json({
+            success: false,
+            message: "Could not connect to ML service",
+            error: error.response?.data || error.message,
+        });
+    }
 });
-
-router.get(
-    "/customer",
-    authenticate,
-    authorize("CUSTOMER"),
-    (req, res) => {
-        res.json({
-            success: true,
-            message: "Customer route accessed",
-            user: req.user,
-        });
-    }
-);
-
-router.get(
-    "/admin",
-    authenticate,
-    authorize("ADMIN"),
-    (req, res) => {
-        res.json({
-            success: true,
-            message: "Admin route accessed",
-            user: req.user,
-        });
-    }
-);
 
 module.exports = router;

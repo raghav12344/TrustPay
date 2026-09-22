@@ -1,4 +1,5 @@
 from statistics import mean, stdev
+from datetime import timezone
 
 
 def build_customer_features(
@@ -12,6 +13,15 @@ def build_customer_features(
     current_time = current_transaction[
         "transaction_time"
     ]
+
+    # ---------------------------------------------------------
+    # Normalize current transaction time
+    # ---------------------------------------------------------
+
+    if current_time.tzinfo is not None:
+        current_time = current_time.astimezone(
+            timezone.utc
+        ).replace(tzinfo=None)
 
     current_hour = current_time.hour
     current_weekday = current_time.weekday()
@@ -120,6 +130,15 @@ def build_customer_features(
             transaction["transaction_time"]
         )
 
+        # Normalize historical MySQL timestamp
+        # to naive UTC for safe subtraction.
+        if transaction_time.tzinfo is not None:
+            transaction_time = (
+                transaction_time
+                .astimezone(timezone.utc)
+                .replace(tzinfo=None)
+            )
+
         time_difference = (
             current_time - transaction_time
         ).total_seconds()
@@ -161,15 +180,6 @@ def build_customer_features(
         current_transaction.get("device_id")
     )
 
-    # IMPORTANT:
-    #
-    # For a brand-new customer there is no history.
-    # Therefore the first device is NOT considered a
-    # "new device" anomaly.
-    #
-    # We only call it a new device when the customer
-    # actually has previous transactions.
-
     if transaction_count == 0:
 
         known_device = 0
@@ -201,14 +211,6 @@ def build_customer_features(
         current_transaction.get("location_id")
     )
 
-    # Same idea as device:
-    #
-    # On the first transaction there is no previous
-    # location to compare against.
-    #
-    # Therefore the first location is NOT considered
-    # a location-change anomaly.
-
     if transaction_count == 0:
 
         known_location = 0
@@ -230,9 +232,6 @@ def build_customer_features(
     # Unusual amount
     # ---------------------------------------------------------
 
-    # We cannot determine whether an amount is unusual
-    # without customer history.
-
     if transaction_count == 0:
 
         is_unusual_amount = 0
@@ -249,15 +248,24 @@ def build_customer_features(
     # Unusual time
     # ---------------------------------------------------------
 
-    historical_hours = [
-        transaction["transaction_time"].hour
-        for transaction in previous_transactions
-    ]
+    historical_hours = []
 
-    # No history = no behavioral time comparison.
-    #
-    # With fewer than 3 transactions we also avoid making
-    # a strong conclusion about the customer's normal time.
+    for transaction in previous_transactions:
+
+        historical_time = (
+            transaction["transaction_time"]
+        )
+
+        if historical_time.tzinfo is not None:
+            historical_time = (
+                historical_time
+                .astimezone(timezone.utc)
+                .replace(tzinfo=None)
+            )
+
+        historical_hours.append(
+            historical_time.hour
+        )
 
     if len(historical_hours) >= 3:
 
