@@ -261,7 +261,6 @@ const createTransaction = async (req, res) => {
                 analysis.ml_prediction
             );
 
-
         // ==========================================
         // HIGH RISK → CREATE FRAUD ALERT
         // ==========================================
@@ -299,20 +298,31 @@ const createTransaction = async (req, res) => {
         // LOW / MEDIUM
         // ==========================================
 
-        return res.status(201).json({
-            success: true,
+        // ==========================================
+// LOW / MEDIUM → APPROVE TRANSACTION
+// ==========================================
 
-            message:
-                "Transaction analyzed successfully",
+await db.query(
+    `UPDATE transactions
+     SET status = 'APPROVED'
+     WHERE transaction_id = ?`,
+    [transactionId]
+);
 
-            transactionId,
+return res.status(201).json({
+    success: true,
 
-            status: "PENDING",
+    message:
+        "Transaction approved successfully",
 
-            location,
+    transactionId,
 
-            fraud: analysis,
-        });
+    status: "APPROVED",
+
+    location,
+
+    fraud: analysis,
+});
 
     } catch (error) {
         console.error(
