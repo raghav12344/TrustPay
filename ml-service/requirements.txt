@@ -11,4 +11,4 @@ pydantic
 python-dotenv
 mysql-connector-python
 
-google-genai
+groq
