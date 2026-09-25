@@ -1,7 +1,7 @@
 -- ==========================================
 -- TrustPay - Database Indexes
 -- ==========================================
-use defaultdb;
+
 -- Users
 CREATE INDEX idx_users_role
 ON users(role);

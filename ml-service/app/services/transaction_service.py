@@ -15,6 +15,7 @@ def get_customer_transactions(
     """
 
     connection = get_db_connection()
+    cursor = None
 
     try:
         cursor = connection.cursor(dictionary=True)
@@ -49,5 +50,6 @@ def get_customer_transactions(
         return cursor.fetchall()
 
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
         connection.close()

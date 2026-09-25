@@ -202,12 +202,8 @@ def build_training_features(df: pd.DataFrame) -> pd.DataFrame:
             previous_devices = {
                 t["device_id"]
                 for t in history
+                if t["device_id"] is not None
             }
-
-            new_device = int(
-                current["device_id"]
-                not in previous_devices
-            )
 
             # --------------------------------------------------
             # Location behavior
@@ -216,12 +212,37 @@ def build_training_features(df: pd.DataFrame) -> pd.DataFrame:
             previous_locations = {
                 t["location_id"]
                 for t in history
+                if t["location_id"] is not None
             }
 
-            location_changed = int(
-                current["location_id"]
-                not in previous_locations
-            )
+            # --------------------------------------------------
+            # Cold start: with no prior transactions there is
+            # nothing to compare against, so we do NOT treat
+            # the first transaction as "new device" / "location
+            # changed". This mirrors the inference-time logic
+            # in services/feature_service.py so the model is
+            # trained on the same feature definitions it will
+            # see in production.
+            # --------------------------------------------------
+
+            if len(history) == 0:
+
+                new_device = 0
+                location_changed = 0
+
+            else:
+
+                new_device = int(
+                    current["device_id"] is not None
+                    and current["device_id"]
+                    not in previous_devices
+                )
+
+                location_changed = int(
+                    current["location_id"] is not None
+                    and current["location_id"]
+                    not in previous_locations
+                )
 
             # --------------------------------------------------
             # Unusual amount
@@ -237,36 +258,24 @@ def build_training_features(df: pd.DataFrame) -> pd.DataFrame:
             # Unusual time
             # --------------------------------------------------
 
+            # This mirrors services/feature_service.py exactly:
+            # "unusual" means outside the customer's historical
+            # min/max hour range, and requires at least 3 prior
+            # transactions before it's meaningful.
+
             historical_hours = [
                 t["transaction_time"].hour
                 for t in history
             ]
 
-            if historical_hours:
+            if len(historical_hours) >= 3:
 
-                hour_counts = {}
-
-                for hour in historical_hours:
-
-                    hour_counts[hour] = (
-                        hour_counts.get(
-                            hour,
-                            0,
-                        )
-                        + 1
-                    )
-
-                most_common_hour = max(
-                    hour_counts,
-                    key=hour_counts.get,
-                )
+                min_hour = min(historical_hours)
+                max_hour = max(historical_hours)
 
                 is_unusual_time = int(
-                    abs(
-                        current_hour
-                        - most_common_hour
-                    )
-                    >= 6
+                    current_hour < min_hour
+                    or current_hour > max_hour
                 )
 
             else:

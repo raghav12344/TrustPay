@@ -56,6 +56,33 @@ CREATE PROCEDURE ApproveTransaction(
 )
 BEGIN
 
+    DECLARE v_current_status VARCHAR(20) DEFAULT NULL;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    -- Lock the row so two admins can't approve/reject it at the same time.
+    SELECT status
+    INTO v_current_status
+    FROM transactions
+    WHERE transaction_id = p_transaction_id
+    FOR UPDATE;
+
+    IF v_current_status IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Transaction not found';
+    END IF;
+
+    IF v_current_status <> 'PENDING' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Transaction has already been resolved';
+    END IF;
+
     UPDATE transactions
     SET status = 'APPROVED'
     WHERE transaction_id = p_transaction_id;
@@ -80,6 +107,8 @@ BEGIN
     WHERE transaction_id = p_transaction_id
       AND status <> 'RESOLVED';
 
+    COMMIT;
+
 END $$
 
 
@@ -90,6 +119,32 @@ CREATE PROCEDURE RejectTransaction(
     IN p_reason TEXT
 )
 BEGIN
+
+    DECLARE v_current_status VARCHAR(20) DEFAULT NULL;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    SELECT status
+    INTO v_current_status
+    FROM transactions
+    WHERE transaction_id = p_transaction_id
+    FOR UPDATE;
+
+    IF v_current_status IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Transaction not found';
+    END IF;
+
+    IF v_current_status <> 'PENDING' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Transaction has already been resolved';
+    END IF;
 
     UPDATE transactions
     SET status = 'REJECTED'
@@ -114,6 +169,8 @@ BEGIN
         resolved_at = CURRENT_TIMESTAMP
     WHERE transaction_id = p_transaction_id
       AND status <> 'RESOLVED';
+
+    COMMIT;
 
 END $$
 

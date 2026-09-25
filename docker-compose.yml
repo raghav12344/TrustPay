@@ -15,12 +15,18 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
 
+    depends_on:
+      - backend
+
     restart: unless-stopped
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+
+    env_file:
+      - ./backend/.env
 
     ports:
       - "5000:5000"
@@ -31,5 +37,27 @@ services:
 
     environment:
       - CHOKIDAR_USEPOLLING=true
+      # Inside Docker, "localhost" refers to the backend
+      # container itself, not the ml-service container.
+      - ML_SERVICE_URL=http://ml-service:8000
+
+    depends_on:
+      - ml-service
+
+    restart: unless-stopped
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./ml-service/.env
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./ml-service:/app
 
     restart: unless-stopped

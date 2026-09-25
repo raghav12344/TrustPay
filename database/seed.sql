@@ -56,13 +56,13 @@ VALUES
 -- ==========================================
 
 INSERT INTO devices
-(user_id, device_type, os, ip_address, is_trusted)
+(user_id, device_identifier, device_type, os, ip_address, is_trusted)
 VALUES
-(1, 'Mobile', 'Android', '192.168.1.10', TRUE),
-(1, 'Laptop', 'Windows', '192.168.1.11', TRUE),
-(2, 'Mobile', 'Android', '192.168.1.20', TRUE),
-(3, 'Laptop', 'Windows', '192.168.1.30', TRUE),
-(3, 'Mobile', 'Android', '192.168.1.31', FALSE);
+(1, 'seed-device-1a', 'Mobile', 'Android', '192.168.1.10', TRUE),
+(1, 'seed-device-1b', 'Laptop', 'Windows', '192.168.1.11', TRUE),
+(2, 'seed-device-2a', 'Mobile', 'Android', '192.168.1.20', TRUE),
+(3, 'seed-device-3a', 'Laptop', 'Windows', '192.168.1.30', TRUE),
+(3, 'seed-device-3b', 'Mobile', 'Android', '192.168.1.31', FALSE);
 
 
 -- ==========================================

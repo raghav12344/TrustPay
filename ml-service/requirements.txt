@@ -12,3 +12,5 @@ python-dotenv
 mysql-connector-python
 
 groq
+
+pytest

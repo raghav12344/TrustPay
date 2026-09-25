@@ -1,7 +1,7 @@
 -- ==========================================
 -- TrustPay - Database Views
 -- ==========================================
-use defaultdb;
+
 -- 1. Complete transaction information
 CREATE OR REPLACE VIEW transaction_details AS
 SELECT

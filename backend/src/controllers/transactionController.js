@@ -484,6 +484,18 @@ const approveTransaction = async (req, res) => {
             error
         );
 
+        /*
+         * The stored procedure SIGNALs SQLSTATE '45000'
+         * for "not found" / "already resolved" cases.
+         * Surface those as 409 instead of a generic 500.
+         */
+        if (error.sqlState === "45000") {
+            return res.status(409).json({
+                success: false,
+                message: error.sqlMessage,
+            });
+        }
+
         res.status(500).json({
             success: false,
             message:
@@ -562,6 +574,13 @@ const rejectTransaction = async (req, res) => {
             "REJECT TRANSACTION ERROR:",
             error
         );
+
+        if (error.sqlState === "45000") {
+            return res.status(409).json({
+                success: false,
+                message: error.sqlMessage,
+            });
+        }
 
         res.status(500).json({
             success: false,

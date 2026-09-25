@@ -52,6 +52,8 @@ CREATE TABLE devices (
 
     user_id BIGINT NOT NULL,
 
+    device_identifier VARCHAR(255) NOT NULL,
+
     device_type VARCHAR(50),
 
     os VARCHAR(50),
@@ -67,7 +69,10 @@ CREATE TABLE devices (
     CONSTRAINT fk_devices_user
         FOREIGN KEY (user_id)
         REFERENCES users(user_id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_devices_user_identifier
+        UNIQUE (user_id, device_identifier)
 );
 
 
