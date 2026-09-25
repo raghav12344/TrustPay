@@ -1,122 +1,174 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import DashboardLayout from './components/DashboardLayout';
 
-function App() {
-  const [count, setCount] = useState(0)
+// Auth Pages
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+// Customer Pages
+import CustomerDashboard from './pages/customer/CustomerDashboard';
+import MakeTransaction from './pages/customer/MakeTransaction';
+import Transactions from './pages/customer/Transactions';
+import TransactionDetails from './pages/customer/TransactionDetails';
+import Profile from './pages/customer/Profile';
 
-      <div className="ticks"></div>
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import FraudAlerts from './pages/admin/FraudAlerts';
+import FraudTransactionDetails from './pages/admin/FraudTransactionDetails';
+import CustomersList from './pages/admin/CustomersList';
+import AdminAccounts from './pages/admin/AdminAccounts';
+import AdminTransactions from './pages/admin/AdminTransactions';
+import Analytics from './pages/admin/Analytics';
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function RootRedirect() {
+  const { isAuthenticated, role, loading } = useAuth();
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return role === 'ADMIN' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />;
 }
 
-export default App
+export function App() {
+  return (
+    <Routes>
+      {/* Public Auth Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Customer Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <DashboardLayout title="Account Overview">
+              <CustomerDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/make-transaction"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <DashboardLayout title="Make Transaction">
+              <MakeTransaction />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <DashboardLayout title="Transaction History">
+              <Transactions />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions/:id"
+        element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <DashboardLayout title="Transaction Details">
+              <TransactionDetails />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Shared Profile & Security Route */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout title="Profile & Security">
+              <Profile />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Sentinel Fraud Monitoring">
+              <AdminDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/fraud-alerts"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Fraud Alerts Queue">
+              <FraudAlerts />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/fraud-alerts/:transactionId"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Alert Forensic Details">
+              <FraudTransactionDetails />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/transactions"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Customer Transactions Ledger">
+              <AdminTransactions />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/customers"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Customer Directory">
+              <CustomersList />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/accounts"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Accounts & Liquidity">
+              <AdminAccounts />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <DashboardLayout title="Risk Analytics">
+              <Analytics />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Root & Fallback */}
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+export default App;

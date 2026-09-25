@@ -4,6 +4,7 @@ const {
     createTransaction,
     getCustomerTransactions,
     getFraudAlerts,
+    getAllTransactionsAdmin,
     approveTransaction,
     rejectTransaction,
 } = require("../controllers/transactionController");
@@ -14,6 +15,14 @@ const {
 } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+router.get(
+    "/admin/all",
+    authenticate,
+    authorize("ADMIN"),
+    getAllTransactionsAdmin
+);
+
 router.post(
     "/admin/transactions/:transactionId/reject",
     authenticate,

@@ -57,6 +57,9 @@ CREATE PROCEDURE ApproveTransaction(
 BEGIN
 
     DECLARE v_current_status VARCHAR(20) DEFAULT NULL;
+    DECLARE v_account_id BIGINT;
+    DECLARE v_amount DECIMAL(15,2);
+    DECLARE v_type VARCHAR(20);
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
@@ -67,8 +70,8 @@ BEGIN
     START TRANSACTION;
 
     -- Lock the row so two admins can't approve/reject it at the same time.
-    SELECT status
-    INTO v_current_status
+    SELECT status, account_id, amount, transaction_type
+    INTO v_current_status, v_account_id, v_amount, v_type
     FROM transactions
     WHERE transaction_id = p_transaction_id
     FOR UPDATE;
@@ -86,6 +89,17 @@ BEGIN
     UPDATE transactions
     SET status = 'APPROVED'
     WHERE transaction_id = p_transaction_id;
+
+    -- Update account balance
+    IF v_type = 'DEPOSIT' THEN
+        UPDATE accounts
+        SET balance = balance + v_amount
+        WHERE account_id = v_account_id;
+    ELSE
+        UPDATE accounts
+        SET balance = balance - v_amount
+        WHERE account_id = v_account_id;
+    END IF;
 
     INSERT INTO admin_reviews (
         transaction_id,
