@@ -185,7 +185,7 @@ export const MakeTransaction = () => {
         </p>
       </div>
 
-      <div className="card" style={{ padding: '32px' }}>
+      <div className="card" style={{ padding: 'clamp(18px, 4vw, 32px)' }}>
         {formError && (
           <div
             className="animate-fade-in"
@@ -560,7 +560,7 @@ export const MakeTransaction = () => {
             </div>
 
             {/* CTAs */}
-            <div style={{ display: 'flex', width: '100%', gap: '12px' }}>
+            <div className="modal-cta-group" style={{ display: 'flex', width: '100%', gap: '12px' }}>
               <button
                 type="button"
                 className="btn btn-secondary"

@@ -32,6 +32,8 @@ export const Modal = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
@@ -49,6 +51,7 @@ export const Modal = ({
     >
       <div
         className="card animate-fade-in"
+        role="document"
         style={{
           width: '100%',
           maxWidth,
@@ -65,7 +68,7 @@ export const Modal = ({
         {(title || showClose) && (
           <div
             style={{
-              padding: '20px 24px',
+              padding: 'clamp(16px, 3.5vw, 20px) clamp(16px, 3.5vw, 24px)',
               borderBottom: '1px solid var(--border-color)',
               display: 'flex',
               alignItems: 'flex-start',
@@ -122,7 +125,7 @@ export const Modal = ({
 
         <div
           style={{
-            padding: '24px',
+            padding: 'clamp(16px, 3.5vw, 24px)',
             overflowY: 'auto',
           }}
         >

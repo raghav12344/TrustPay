@@ -135,7 +135,7 @@ export const CustomerDashboard = () => {
           <div
             className="card"
             style={{
-              padding: '28px 32px',
+              padding: 'clamp(20px, 4vw, 32px)',
               marginBottom: '28px',
               background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #1D4ED8 100%)',
               color: '#FFFFFF',
@@ -202,7 +202,7 @@ export const CustomerDashboard = () => {
 
                 <div
                   style={{
-                    fontSize: '36px',
+                    fontSize: 'clamp(26px, 5.5vw, 36px)',
                     fontWeight: 800,
                     letterSpacing: '-0.02em',
                     lineHeight: 1.1,

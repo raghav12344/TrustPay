@@ -177,7 +177,7 @@ export const FraudTransactionDetails = () => {
       <div
         className="card"
         style={{
-          padding: '24px 28px',
+          padding: 'clamp(16px, 3.5vw, 24px) clamp(16px, 3.5vw, 28px)',
           marginBottom: '24px',
           backgroundColor: isOpen ? 'var(--color-danger-bg)' : 'var(--bg-card-subtle)',
           border: isOpen
@@ -190,7 +190,7 @@ export const FraudTransactionDetails = () => {
           gap: '16px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
           <div
             style={{
               width: '46px',
@@ -201,20 +201,21 @@ export const FraudTransactionDetails = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             {isOpen ? <ShieldAlert size={26} /> : <ShieldCheck size={26} />}
           </div>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '22px', fontWeight: 800 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h1 style={{ fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 800 }}>
                 {isOpen ? 'HIGH RISK TRANSACTION DETECTED' : 'RESOLVED TRANSACTION ALERT'}
               </h1>
               <RiskBadge riskLevel={alert.severity || alert.prediction} />
             </div>
 
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px', wordBreak: 'break-word' }}>
               Reference ID: <strong style={{ fontFamily: 'var(--font-mono)' }}>#{alert.transaction_id}</strong>
               {' • '}
               Status: <strong style={{ color: isOpen ? 'var(--color-danger)' : 'var(--color-success)' }}>{alert.alert_status || 'OPEN'}</strong>
@@ -223,7 +224,7 @@ export const FraudTransactionDetails = () => {
         </div>
 
         {isOpen && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="fraud-banner-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               type="button"
               className="btn btn-success"

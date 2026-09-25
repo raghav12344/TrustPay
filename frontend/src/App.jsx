@@ -1,8 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
+
+// Landing & Marketing Page
+import LandingPage from './pages/LandingPage';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -23,13 +25,6 @@ import CustomersList from './pages/admin/CustomersList';
 import AdminAccounts from './pages/admin/AdminAccounts';
 import AdminTransactions from './pages/admin/AdminTransactions';
 import Analytics from './pages/admin/Analytics';
-
-function RootRedirect() {
-  const { isAuthenticated, role, loading } = useAuth();
-  if (loading) return null;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return role === 'ADMIN' ? <Navigate to="/admin" replace /> : <Navigate to="/dashboard" replace />;
-}
 
 export function App() {
   return (
@@ -164,8 +159,8 @@ export function App() {
         }
       />
 
-      {/* Root & Fallback */}
-      <Route path="/" element={<RootRedirect />} />
+      {/* Landing Page (Public) */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

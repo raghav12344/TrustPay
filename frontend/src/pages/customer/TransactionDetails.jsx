@@ -83,7 +83,7 @@ export const TransactionDetails = () => {
         <span>Back to Transactions</span>
       </button>
 
-      <div className="card" style={{ padding: '32px' }}>
+      <div className="card" style={{ padding: 'clamp(18px, 4vw, 32px)' }}>
         <div
           style={{
             display: 'flex',

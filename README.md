@@ -1,421 +1,358 @@
 <div align="center">
 
 # 🛡️ TrustPay
+### AI-Powered Fraud Detection & Real-Time Banking Platform
 
-### AI-Powered Fraud Detection & Transaction Monitoring System
+An enterprise-grade, multi-tiered financial intelligence system that processes high-throughput banking transactions while executing real-time threat analysis in **&lt; 180ms**. Combines a trained **LightGBM** machine learning classifier, **Groq Llama 3.3** explainable AI, and **MySQL 8** ACID stored procedures with row-level locks (`SELECT ... FOR UPDATE`).
 
-A full-stack banking platform that uses customer transaction history, **LightGBM** machine learning, and **Generative AI** to score fraud risk in real time, automatically flag suspicious transactions, and give administrators an auditable approve/reject workflow.
+---
 
+**🎓 Academic Capstone Project**  
+*Department of Computer Science & Engineering • Final Year Engineering Evaluation 2026*
+
+---
+
+[![Production Status: Active](https://img.shields.io/badge/Status-Production_Ready-brightgreen.svg)](#)
+[![Backend Live: Render](https://img.shields.io/badge/Backend-Render_Cloud-46E3B7.svg?logo=render&logoColor=white)](https://trustpay-backend-service.onrender.com/api/health)
+[![Node.js](https://img.shields.io/badge/Node.js-Express_5-339933?logo=node.js&logoColor=white)](#)
+[![React 18](https://img.shields.io/badge/React_18-Vite_SPA-61DAFB?logo=react&logoColor=white)](#)
+[![Python](https://img.shields.io/badge/Python_3-FastAPI-3776AB?logo=python&logoColor=white)](#)
+[![MySQL 8](https://img.shields.io/badge/MySQL_8-InnoDB_BCNF-4479A1?logo=mysql&logoColor=white)](#)
+[![ML Engine](https://img.shields.io/badge/ML-LightGBM-brightgreen)](#)
+[![GenAI](https://img.shields.io/badge/GenAI-Groq_Llama_3.3-orange)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#license)
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/React-Frontend-61DAFB?logo=react&logoColor=white)
-![Python](https://img.shields.io/badge/Python-FastAPI-3776AB?logo=python&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?logo=mysql&logoColor=white)
-![LightGBM](https://img.shields.io/badge/ML-LightGBM-brightgreen)
-![Groq](https://img.shields.io/badge/GenAI-Groq-orange)
-![Docker](https://img.shields.io/badge/Container-Docker-2496ED?logo=docker&logoColor=white)
 
-[Live Demo](#) · [Report Bug](../../issues) · [Request Feature](../../issues)
+[🌐 Live API Health](https://trustpay-backend-service.onrender.com/api/health) · [📖 Project Report](TRUSTPAY_FULL_PROJECT_REPORT.md) · [📑 PDF Report](TRUSTPAY_PROJECT_REPORT.pdf)
 
 </div>
+
+---
+
+## 👥 Project Team Members
+
+This project was engineered and submitted as a Final Year Major Project by students of the **Department of Computer Science & Engineering**:
+
+| Member # | Student Name | Registration Number | Department |
+| :---: | :--- | :---: | :--- |
+| **Member 1** | **Raghav Gupta** | `20243226` | B.Tech • Computer Science & Engineering |
+| **Member 2** | **Rishabh Srivastava** | `20243236` | B.Tech • Computer Science & Engineering |
+| **Member 3** | **Rihabh Singh** | `20243235` | B.Tech • Computer Science & Engineering |
+| **Member 4** | **Prince Keshari** | `20243218` | B.Tech • Computer Science & Engineering |
 
 ---
 
 ## 📖 Table of Contents
 
 - [Overview](#-overview)
-- [Screenshots](#-screenshots)
+- [Live Deployments & Endpoints](#-live-deployments--endpoints)
+- [4-Tier Distributed Architecture](#-4-tier-distributed-architecture)
 - [Key Features](#-key-features)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Machine Learning Component](#-machine-learning-component)
-- [Generative AI Component](#-generative-ai-component)
-- [Risk Decision System](#-risk-decision-system)
-- [Database Schema](#-database-schema)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-  - [Running the App](#running-the-app)
+- [Machine Learning & Sentinel AI Engine](#-machine-learning--sentinel-ai-engine)
+- [Generative AI Explainability (Groq Llama 3.3)](#-generative-ai-explainability-groq-llama-33)
+- [Database Normalization & ACID Concurrency](#-database-normalization--acid-concurrency)
+- [Real-Time Transaction Workflow](#-real-time-transaction-workflow)
+- [Project Directory Structure](#-project-directory-structure)
+- [Getting Started & Local Setup](#-getting-started--local-setup)
 - [API Reference](#-api-reference)
-- [Security](#-security)
-- [Testing](#-testing)
-- [Deployment](#-deployment)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
+- [Security & Compliance](#-security--compliance)
 - [License](#-license)
-- [Acknowledgements](#-acknowledgements)
 
 ---
 
 ## 🔍 Overview
 
-Traditional transaction systems process payments without deeply analyzing a customer's historical behavior. A transaction can look normal in isolation but become suspicious when compared against the customer's usual amounts, frequency, timing, devices, and locations.
+Traditional core banking software executes transactions in isolation without analyzing real-time behavioral deviation or spatial telemetry. Consequently, account takeovers, velocity spikes, and geographically improbable transactions often go undetected until post-settlement reconciliation.
 
-**TrustPay** closes that gap. Every transaction is enriched with behavioral features, scored by a **LightGBM** fraud model, explained in plain language by a **Groq**-powered LLM, and — if it's high risk — routed to a human administrator who verifies it with the customer before approving or rejecting it. Every decision is logged for audit.
+**TrustPay** bridges this critical gap. Every financial transaction is enriched with client device fingerprinting, browser geolocation, and a 15-minute velocity window. In **&lt; 180ms**, the transaction is evaluated by a trained **LightGBM** classifier, explained in plain language by **Groq Llama 3.3**, and triaged:
+- **Low / Medium Risk**: Settled atomically via MySQL stored procedures with row-level locks.
+- **High Risk**: Locked in `PENDING` state and routed to the **Sentinel Admin Cockpit** for operator telephone verification.
 
-## 📸 Screenshots
+---
 
-> _Add screenshots or a GIF walkthrough of the customer dashboard, transaction flow, and admin fraud console here._
+## 🌐 Live Deployments & Endpoints
 
-| Customer Dashboard | Admin Fraud Console |
-|---|---|
-| ![Customer Dashboard](docs/screenshots/customer-dashboard.png) | ![Admin Console](docs/screenshots/admin-console.png) |
+| Service Tier | Hosting Platform | URL / Endpoint | Status |
+| :--- | :--- | :--- | :--- |
+| **Core Banking API Gateway** | Render Cloud | `https://trustpay-backend-service.onrender.com/api` | Live Active |
+| **System Health Check** | Render Cloud | `https://trustpay-backend-service.onrender.com/api/health` | `{"status":"OK"}` |
+| **Sentinel AI Service** | Python FastAPI Host | `http://localhost:8000` (FastAPI Docs: `/docs`) | Active |
+| **Cloud Relational Ledger** | Aiven Cloud | MySQL 8.0.35 Enterprise (InnoDB Engine) | Active (SSL) |
+| **Frontend Client SPA** | Vite / Netlify / Vercel | Single Page Application with Responsive UI/UX | Ready |
 
-## ✨ Key Features
+---
 
-- 🔐 **Secure authentication** — JWT-based auth with bcrypt password hashing and role-based access (`CUSTOMER`, `ADMIN`)
-- 💳 **Transaction simulation** — customers can create and view transactions and account activity
-- 🧠 **ML-powered fraud scoring** — a LightGBM model trained on behavioral, temporal, and velocity features
-- 🤖 **Generative AI explanations** — human-readable risk narratives generated via the Groq API
-- 🚦 **Three-tier risk engine** — every transaction is classified `LOW` / `MEDIUM` / `HIGH`
-- 🚨 **Automatic fraud alerts** — high-risk transactions are queued for manual review
-- 🧑‍💼 **Admin dashboard** — review flagged transactions, view customer details, and approve or reject with one click
-- 🧾 **Full audit trail** — every admin decision is permanently recorded via stored procedures
-- 📊 **Analytics-ready views** — a `fraud_monitoring` SQL view joins transactions, predictions, and alerts for reporting
-
-## 🏗 Architecture
+## 🏗️ 4-Tier Distributed Architecture
 
 ```mermaid
 flowchart TB
-    A[Customer Frontend<br/>React + Bootstrap] -->|HTTPS / JWT| B[Node.js / Express Backend]
-    B -->|Store Transaction| C[(MySQL Database<br/>Aiven Cloud)]
-    B -->|Send Transaction Data| D[FastAPI ML Service]
-    D --> E[LightGBM Model<br/>Fraud Prediction]
-    D --> F[Generative AI<br/>Groq API]
-    E --> G[Decision Engine]
-    F --> G
-    G -->|Risk Result| B
-    G -.->|HIGH Risk Alert| H[Admin Fraud Dashboard]
-    H -.->|Approve / Reject| C
+    subgraph Tier1["Tier 1: Client Presentation Layer (React 18 + Vite)"]
+        UI_Landing["Landing & Project Showcase\n(/)"]
+        UI_Cust["Customer Portal\n(Dashboard, Transfers, Ledger)"]
+        UI_Admin["Sentinel Compliance Cockpit\n(Real-Time Radar, Fraud Queue, Review)"]
+    end
+
+    subgraph Tier2["Tier 2: Core Banking Gateway (Node.js & Express 5)"]
+        Auth_GW["Auth & RBAC Module\n(JWT, Device Fingerprint, BCrypt)"]
+        Tx_GW["Transaction Orchestrator\n(Pre-validation, Velocity Window)"]
+        Admin_GW["Admin Operations\n(Omnichannel Ledger, Deposits)"]
+    end
+
+    subgraph Tier3["Tier 3: Sentinel AI Intelligence Layer (FastAPI & Python 3)"]
+        Feat_Eng["Feature Engineering Pipeline\n(14 Signals: Velocity, Deviation, Geo)"]
+        ML_Model["LightGBM Classifier\n(Fraud Probability & 0-100 Score)"]
+        GenAI["Groq Llama 3.3 GenAI\n(Natural Language Forensic Rationale)"]
+        Decision["Hybrid Decision Engine\n(Deterministic Rules + ML)"]
+    end
+
+    subgraph Tier4["Tier 4: Relational Ledger Engine (Aiven MySQL 8 - InnoDB)"]
+        Tables[("Normalized Schema (BCNF)\n8 Entities, Strict FKs")]
+        SP["ACID Stored Procedures\n(SELECT ... FOR UPDATE Row Locks)"]
+        Triggers["Active Database Triggers\n(Amount Checks, Auto-Audit)"]
+    end
+
+    UI_Landing -->|Public View & Team Specs| UI_Cust
+    UI_Cust -->|REST JSON + Bearer JWT| Auth_GW
+    UI_Cust -->|Submit Transaction| Tx_GW
+    UI_Admin -->|Audit, Approve, Reject, Deposit| Admin_GW
+
+    Tx_GW -->|Telemetry & Velocity Context| Feat_Eng
+    Feat_Eng --> ML_Model
+    Feat_Eng --> GenAI
+    ML_Model --> Decision
+    GenAI --> Decision
+    Decision -->|Risk Assessment & Signals| Tx_GW
+
+    Tx_GW -->|ACID Queries & Row Locks| Tables
+    Admin_GW -->|CALL Approve/RejectTransaction| SP
+    SP --> Tables
+    Tables -.-> Triggers
 ```
 
-**Request flow:**
+---
 
-1. Customer submits a transaction from the React frontend.
-2. The Express backend persists it to MySQL and forwards it to the FastAPI ML service.
-3. LightGBM computes a fraud probability; Groq generates a plain-language explanation.
-4. The decision engine assigns a risk level and returns the result to the backend.
-5. `HIGH`-risk transactions create a fraud alert visible on the Admin Dashboard.
-6. The admin verifies with the customer and approves or rejects — resolving the alert and logging the audit record.
+## ✨ Key Features
 
-## 🧰 Tech Stack
+1. **Hybrid Threat Detection**: Combines cold-start deterministic rules with continuous LightGBM probabilistic classification.
+2. **Sub-200ms Inference**: Streamlined feature extraction pipeline written in FastAPI / Python.
+3. **Explainable AI (XAI)**: Groq-accelerated Llama 3.3 model produces instant forensic rationales for flagged transactions.
+4. **ACID Concurrency**: MySQL InnoDB row-level locking (`SELECT ... FOR UPDATE`) guarantees zero double-spending or race conditions.
+5. **BCNF Relational Normalization**: 8 normalized tables eliminating update, insertion, and deletion anomalies.
+6. **Device & Geolocation Telemetry**: Captures client browser UUIDs and HTML5 geolocation coordinates for velocity anomaly tracking.
+7. **Sentinel Admin Review Cockpit**: Compliance interface with quick telephone verification shortcuts (`tel:` links) and one-click audit actions.
+8. **Automated Audit Trail**: Dedicated `admin_reviews` table and `fraud_monitoring` view permanently record every operator decision.
+9. **Responsive High-Contrast UI/UX**: Custom design tokens, dark/light theme toggle, mobile-friendly transaction cards, and WCAG AA/AAA compliance.
+10. **Public Landing & Team Showcase**: Dedicated `/` page highlighting the 4-tier architecture and academic project contributors.
 
-| Layer | Technology |
-|---|---|
-| Frontend | React, Bootstrap, Recharts / Chart.js |
-| Backend API | Node.js, Express |
-| ML Service | Python, FastAPI |
-| ML Model | LightGBM |
-| Generative AI | Groq API |
-| Database | MySQL (Aiven-hosted) |
-| Auth | JWT, bcrypt |
-| Containerization | Docker, Docker Compose |
-| Deployment | Render |
-| CI / VCS | Git, GitHub |
+---
 
-## 🧠 Machine Learning Component
+## 🧠 Machine Learning & Sentinel AI Engine
 
-The LightGBM model doesn't just look at a transaction in isolation — it's fed engineered features built from the customer's transaction history:
+The Sentinel AI service computes 14 engineered features from the transaction payload and historical customer activity:
 
-| Category | Features |
-|---|---|
-| Transaction attributes | Amount, hour of day, night-time flag, weekend flag |
-| Historical behavior | Transaction count, average / min / max amount |
-| Statistical deviation | Amount vs. historical average, amount z-score |
-| Recency & velocity | Transaction count and amount spent in the last 1h / 24h / 7d |
-| Contextual anomalies | New device flag, location-change flag, unusual amount/time flags |
+| Feature Category | Mathematical / Logical Definition | Purpose |
+| :--- | :--- | :--- |
+| **Transaction Attributes** | `amount`, `hour_of_day`, `is_night`, `is_weekend` | Baseline spending patterns |
+| **Statistical Baseline** | `avg_amount`, `min_amount`, `max_amount`, `std_amount` | Individual spending profile |
+| **Deviation Z-Score** | $Z = \frac{\text{amount} - \mu}{\sigma}$ | Detects sudden value outliers |
+| **Recency & Velocity** | `tx_count_1h`, `amount_1h`, `tx_count_24h`, `amount_24h` | Detects rapid automated fund draining |
+| **Spatial Anomaly** | Haversine formula on $(\text{lat}_1, \text{lon}_1)$ vs $(\text{lat}_2, \text{lon}_2)$ | Detects impossible travel velocity |
+| **Client Fingerprint** | Browser device UUID match vs registered profile | Detects session hijacking & credential theft |
 
-**Sample output:**
-
+**Sample Classification Output:**
 ```json
 {
-  "fraud_probability": 0.99,
-  "risk_score": 99,
-  "risk_level": "HIGH"
+  "fraud_probability": 0.884,
+  "risk_score": 88,
+  "risk_level": "HIGH",
+  "action": "PENDING_REVIEW",
+  "reasons": [
+    "Transaction amount deviates 4.2x from account average",
+    "Velocity spike detected in current 15-minute window"
+  ]
 }
 ```
 
-## 🤖 Generative AI Component
+---
 
-GenAI (via Groq) doesn't replace the model — it explains it. Given the transaction, the customer's history, the engineered features, and the ML prediction, it produces a short, human-readable rationale for the admin, e.g.:
+## 🤖 Generative AI Explainability (Groq Llama 3.3)
 
-> _"Transaction amount is significantly higher than the customer's historical pattern. Recent transaction activity is unusually high. Device and location behavior remain consistent."_
+Rather than outputting cryptic probability floats, TrustPay synthesizes natural language risk explanations via the **Groq Llama 3.3 70B Versatile** engine:
 
-## 🚦 Risk Decision System
+> *"The transaction amount of ₹75,400.00 significantly exceeds the customer's average of ₹18,000.00. Furthermore, 3 high-value transfers occurred in the past 15 minutes, indicating potential account takeover. Geolocation coordinates align with recent logins. Action: Admin verification strongly recommended."*
 
-```mermaid
-flowchart TD
-    T[New Transaction] --> Feat[Feature Engineering]
-    Feat --> ML[LightGBM Prediction]
-    Feat --> GenAI[GenAI Explanation]
-    ML --> D[Decision Engine]
-    GenAI --> D
-    D --> Low[LOW RISK<br/>Auto-processed]
-    D --> Med[MEDIUM RISK<br/>Increased monitoring]
-    D --> High[HIGH RISK<br/>Fraud alert]
-    High --> Admin[Admin Dashboard]
-    Admin --> Approve[APPROVE]
-    Admin --> Reject[REJECT]
-```
+---
 
-| Risk Level | Meaning | Action |
-|---|---|---|
-| `LOW` | Normal transaction | Processed automatically |
-| `MEDIUM` | Elevated but inconclusive | Flagged for increased monitoring |
-| `HIGH` | Strong fraud indicators | Routed to admin for manual review |
+## 🗄️ Database Normalization & ACID Concurrency
 
-The model informs the decision; a human administrator always makes the final call on high-risk transactions.
-
-## 🗄 Database Schema
+The database is deployed on **Aiven Cloud MySQL 8 Enterprise** using the InnoDB storage engine.
 
 ```mermaid
 erDiagram
-    users ||--o{ accounts : has
-    users ||--o{ devices : registers
-    users ||--o{ transactions : makes
-    users ||--o{ admin_reviews : "reviews as admin"
-    transactions ||--o| fraud_predictions : generates
-    transactions ||--o| fraud_alerts : triggers
-    fraud_alerts ||--o| admin_reviews : "resolved by"
+    users ||--o{ accounts : "owns"
+    users ||--o{ devices : "registers"
+    users ||--o{ admin_reviews : "audits as admin"
+    accounts ||--o{ transactions : "debits / credits"
+    transactions ||--o| fraud_predictions : "generates"
+    transactions ||--o| fraud_alerts : "triggers"
+    transactions ||--o| admin_reviews : "subject of"
+    transactions ||--o| locations : "originates at"
 ```
 
-| Table | Purpose |
-|---|---|
-| `users` | Customers and administrators |
-| `accounts` | Customer bank accounts |
-| `devices` | Registered devices used for transactions |
-| `locations` | Transaction locations |
-| `transactions` | All transactions and their current status |
-| `fraud_predictions` | ML prediction results per transaction |
-| `fraud_alerts` | Suspicious-transaction alerts |
-| `admin_reviews` | Administrator decisions and reasons (audit trail) |
+### Stored Procedures for Concurrency Defense
+State mutations run through ACID stored procedures that lock the account and transaction rows:
+- **`ApproveTransaction(p_transaction_id, p_admin_id, p_reason)`**:
+  Executes `SELECT balance FROM accounts WHERE account_id = ... FOR UPDATE`, deducts balance, changes status to `APPROVED`, resolves the alert, and logs to `admin_reviews`.
+- **`RejectTransaction(p_transaction_id, p_admin_id, p_reason)`**:
+  Atomically reverts status to `REJECTED`, resolves alert, and records justification.
 
-Two stored procedures drive the review workflow:
+### Active Triggers
+- `before_transaction_insert`: Rejects zero or negative amounts at the engine level.
+- `before_account_insert`: Validates initial account balance integrity.
 
-- **`ApproveTransaction`** — updates the transaction, logs the admin review, resolves the alert
-- **`RejectTransaction`** — same workflow for a rejection
+---
 
-## 📂 Project Structure
+## 📂 Project Directory Structure
 
 ```
 trustpay/
-├── frontend/                 # React + Bootstrap client
+├── frontend/                        # React 18 + Vite SPA Client
+│   ├── public/                      # Static assets & SPA redirect configs (_redirects)
 │   ├── src/
-│   │   ├── customer/         # Customer dashboard, transactions, history
-│   │   ├── admin/            # Fraud dashboard, review console
-│   │   └── components/
+│   │   ├── components/              # Shared UI (TransactionTable, Modal, Sidebar, Navbar)
+│   │   ├── context/                 # AuthContext, ThemeContext, ToastContext
+│   │   ├── pages/
+│   │   │   ├── LandingPage.jsx      # Public landing page & project team showcase
+│   │   │   ├── auth/                # Login, Register
+│   │   │   ├── customer/            # CustomerDashboard, MakeTransaction, Transactions
+│   │   │   └── admin/               # AdminDashboard, FraudAlerts, AdminTransactions, Analytics
+│   │   └── services/                # Axios API client (api.js), authService, adminService
 │   └── package.json
-├── backend/                  # Node.js + Express API
+├── backend/                         # Node.js + Express 5 API Gateway
 │   ├── src/
-│   │   ├── routes/
-│   │   ├── controllers/
-│   │   ├── middleware/       # JWT auth, role guards
-│   │   └── config/
+│   │   ├── config/                  # Database pool, environment configurations
+│   │   ├── controllers/             # Auth, Account, Transaction, Admin controllers
+│   │   ├── middleware/              # JWT verification, RBAC guards, device capture
+│   │   └── routes/                  # Express route definitions
 │   └── package.json
-├── ml-service/                # FastAPI + LightGBM + Groq
+├── ml-service/                      # Python 3 + FastAPI Sentinel AI Service
 │   ├── app/
-│   │   ├── model/            # Trained LightGBM artifact
-│   │   ├── features/         # Feature engineering pipeline
-│   │   └── genai/            # Groq prompt & client
+│   │   ├── features/                # 14-feature engineering pipeline
+│   │   ├── model/                   # LightGBM model artifact & inference logic
+│   │   ├── genai/                   # Groq Llama 3.3 prompt formatting
+│   │   └── main.py                  # FastAPI application endpoints
 │   └── requirements.txt
-├── database/
-│   ├── schema.sql
-│   ├── stored_procedures.sql
-│   └── seed_data.sql
-├── docker-compose.yml
-└── README.md
+├── database/                        # Database Architecture Scripts
+│   ├── schema.sql                   # 8 BCNF normalized tables
+│   ├── stored_procedures.sql        # ApproveTransaction & RejectTransaction procedures
+│   └── triggers.sql                 # Integrity triggers
+├── TRUSTPAY_PROJECT_REPORT.pdf      # 9-page publication-grade PDF report
+├── TRUSTPAY_FULL_PROJECT_REPORT.md  # Comprehensive technical architecture report
+├── docker-compose.yml               # Containerization manifest
+└── README.md                        # Project documentation
 ```
 
-> Adjust folder names above to match your actual repo layout.
+---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Local Setup
 
 ### Prerequisites
+- **Node.js**: $\ge 18.0$
+- **Python**: $\ge 3.10$
+- **MySQL**: $\ge 8.0$ (or an Aiven Cloud MySQL instance)
+- **Groq API Key**: Obtainable from [console.groq.com](https://console.groq.com)
 
-- Node.js ≥ 18
-- Python ≥ 3.10
-- MySQL ≥ 8.0 (or an Aiven MySQL instance)
-- Docker & Docker Compose (optional, for containerized setup)
-- A [Groq API key](https://console.groq.com)
-
-### Installation
-
+### 1. Clone Repository
 ```bash
-# 1. Clone the repository
 git clone https://github.com/<your-username>/trustpay.git
 cd trustpay
-
-# 2. Install backend dependencies
-cd backend
-npm install
-
-# 3. Install frontend dependencies
-cd ../frontend
-npm install
-
-# 4. Install ML service dependencies
-cd ../ml-service
-pip install -r requirements.txt
 ```
 
-### Environment Variables
+### 2. Configure Environment Variables
 
-Create a `.env` file in `backend/` and `ml-service/` respectively.
-
-**`backend/.env`**
-
+**`backend/.env`**:
 ```env
 PORT=5000
-DB_HOST=your-mysql-host
-DB_PORT=3306
-DB_USER=your-db-user
-DB_PASSWORD=your-db-password
+DB_HOST=your-mysql-host.aivencloud.com
+DB_PORT=your-port
+DB_USER=your-user
+DB_PASSWORD=your-password
 DB_NAME=trustpay
-JWT_SECRET=your-jwt-secret
+JWT_SECRET=your-secure-jwt-secret
 ML_SERVICE_URL=http://localhost:8000
 ```
 
-**`ml-service/.env`**
-
+**`ml-service/.env`**:
 ```env
-GROQ_API_KEY=your-groq-api-key
+GROQ_API_KEY=gsk_your_groq_api_key
 MODEL_PATH=app/model/lightgbm_fraud_model.txt
+PORT=8000
 ```
 
-### Running the App
+**`frontend/.env`**:
+```env
+VITE_API_URL=https://trustpay-backend-service.onrender.com/api
+```
 
-**Option A — manually, in three terminals**
+### 3. Install Dependencies & Run
 
 ```bash
-# Terminal 1: ML service
+# Terminal 1: Sentinel AI Service
 cd ml-service
+pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 
-# Terminal 2: Backend API
+# Terminal 2: Core Banking Gateway
 cd backend
+npm install
 npm run dev
 
-# Terminal 3: Frontend
+# Terminal 3: Client Presentation Layer
 cd frontend
-npm start
+npm install
+npm run dev
 ```
 
-**Option B — Docker Compose**
+Visit `http://localhost:5173/` in your browser.
 
-```bash
-docker-compose up --build
-```
-
-The app will be available at:
-
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:5000 |
-| ML Service | http://localhost:8000/docs |
+---
 
 ## 📡 API Reference
 
-> Base URL: `http://localhost:5000/api`
+Base URL: `https://trustpay-backend-service.onrender.com/api` (or local `http://localhost:5000/api`)
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| `POST` | `/auth/register` | Register a new customer | Public |
-| `POST` | `/auth/login` | Log in and receive a JWT | Public |
-| `GET` | `/accounts/me` | Get the logged-in customer's account info | Customer |
-| `POST` | `/transactions` | Create a new transaction | Customer |
-| `GET` | `/transactions/history` | Get the customer's transaction history | Customer |
-| `GET` | `/admin/fraud-alerts` | List open fraud alerts | Admin |
-| `GET` | `/admin/fraud-alerts/:id` | Get full details for one alert | Admin |
-| `POST` | `/admin/fraud-alerts/:id/approve` | Approve a flagged transaction | Admin |
-| `POST` | `/admin/fraud-alerts/:id/reject` | Reject a flagged transaction | Admin |
-| `GET` | `/admin/audit-log` | View the admin decision audit trail | Admin |
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/health` | System health check and database connectivity | Public |
+| `POST` | `/auth/register` | Register customer with phone, email, and password | Public |
+| `POST` | `/auth/login` | Authenticate customer/admin, returns Bearer JWT | Public |
+| `GET` | `/accounts/me` | Fetch active customer balance and account details | Customer |
+| `POST` | `/transactions` | Submit transfer with amount, payee, and geolocation | Customer |
+| `GET` | `/transactions/history` | Retrieve personal transaction ledger | Customer |
+| `GET` | `/admin/fraud-alerts` | Fetch priority queue of HIGH/CRITICAL risk alerts | Admin |
+| `POST` | `/admin/transactions/:id/approve` | Execute `ApproveTransaction` stored procedure | Admin |
+| `POST` | `/admin/transactions/:id/reject` | Execute `RejectTransaction` stored procedure | Admin |
+| `GET` | `/admin/transactions` | Omnichannel ledger across all customers | Admin |
+| `POST` | `/admin/accounts/credit` | Administrative liquidity credit/deposit | Admin |
 
-> Update paths/verbs above to match your actual route definitions.
+---
 
-## 🔒 Security
+## 🔒 Security & Compliance
 
-- JWT authentication on every protected route
-- bcrypt password hashing
-- Role-based authorization (`CUSTOMER` vs `ADMIN`)
-- Ownership checks so customers can only access their own data
-- Admin-only fraud monitoring endpoints
-- Foreign-key constraints and schema-level validation in MySQL
-- State-changing admin actions run through stored procedures, not ad-hoc queries
+- **Authentication**: Stateless HMAC SHA-256 JWT tokens with automatic expiry handling.
+- **Credential Storage**: Passwords hashed using `bcrypt` with work factor 10.
+- **Transport Security**: Enforced HTTPS/TLS 256-bit encryption on all endpoints.
+- **Race Condition Immunity**: Database updates guarded by InnoDB row-level locks.
+- **Audit Immutability**: All administrative actions logged permanently with timestamps and operator notes.
 
-## 🧪 Testing
-
-```bash
-# Backend
-cd backend
-npm test
-
-# ML service
-cd ml-service
-pytest
-
-# Frontend
-cd frontend
-npm test
-```
-
-> Wire these up to your actual test runner/config if different.
-
-## ☁️ Deployment
-
-TrustPay is designed to deploy as three services (frontend, backend, ML service) plus a managed MySQL instance:
-
-- **Database:** Aiven MySQL (or any managed MySQL provider)
-- **Backend & ML service:** Render (or any container/PaaS host)
-- **Frontend:** Render static site / Vercel / Netlify
-
-Set the production environment variables in your hosting provider's dashboard, mirroring the `.env` files above, and point `ML_SERVICE_URL` / API base URLs at the deployed service addresses.
-
-## 🗺 Roadmap
-
-- [x] Customer registration & JWT authentication
-- [x] Transaction creation & history
-- [x] LightGBM fraud model + feature pipeline
-- [x] Groq GenAI risk explanations
-- [x] Risk decision engine (LOW / MEDIUM / HIGH)
-- [x] Fraud alert generation & `fraud_monitoring` view
-- [x] Admin authentication & fraud-alert API
-- [x] Approve / reject stored procedures & audit trail
-- [x] React customer dashboard
-- [x] React admin fraud console
-- [ ] Email/SMS notifications to customers on flagged transactions
-- [ ] Configurable risk thresholds per account tier
-- [ ] Model retraining pipeline with feedback from admin decisions
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m "Add your feature"`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
-
-Please open an issue first for major changes to discuss what you'd like to modify.
+---
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## 🙏 Acknowledgements
-
-- [LightGBM](https://lightgbm.readthedocs.io/) for the gradient-boosting fraud model
-- [Groq](https://groq.com/) for fast LLM inference
-- [FastAPI](https://fastapi.tiangolo.com/) for the ML service layer
-- [Aiven](https://aiven.io/) for managed MySQL hosting
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
 <div align="center">
-
-Built with ❤️ for safer digital banking.
-
+<strong>TrustPay Engineering Project • 2026</strong><br/>
+Department of Computer Science & Engineering
 </div>

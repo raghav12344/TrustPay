@@ -43,6 +43,17 @@ export const Sidebar = ({ isOpen, onClose }) => {
 
   const links = isAdmin ? adminLinks : customerLinks;
 
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -56,6 +67,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
             zIndex: 40,
             backdropFilter: 'blur(2px)',
           }}
+          aria-hidden="true"
         />
       )}
 
@@ -74,6 +86,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
           flexShrink: 0,
         }}
         className={`sidebar ${isOpen ? 'open' : ''}`}
+        aria-label="Navigation sidebar"
       >
         {/* Logo and Brand */}
         <div
@@ -143,6 +156,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
               display: 'none',
               padding: '4px',
             }}
+            aria-label="Close navigation sidebar"
           >
             <X size={20} />
           </button>

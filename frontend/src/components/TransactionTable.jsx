@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { formatINR, formatDateTime } from '../utils/formatting';
 import StatusBadge from './StatusBadge';
 import EmptyState from './EmptyState';
-import { getTransactionIcon } from './TransactionCard';
+import TransactionCard, { getTransactionIcon } from './TransactionCard';
 import { Search, Filter } from 'lucide-react';
 
 export const TransactionTable = ({
@@ -149,8 +149,8 @@ export const TransactionTable = ({
         />
       ) : (
         <>
-          {/* Desktop Table View */}
-          <div className="table-container" style={{ display: 'block' }}>
+          {/* Desktop & Tablet Table View (>= 768px) */}
+          <div className="table-container desktop-table-view">
             <table className="data-table">
               <thead>
                 <tr>
@@ -255,6 +255,17 @@ export const TransactionTable = ({
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Cards View (< 768px) */}
+          <div className="mobile-cards-view">
+            {displayedTransactions.map((tx) => (
+              <TransactionCard
+                key={tx.transaction_id}
+                transaction={tx}
+                onClick={onSelectTransaction ? () => onSelectTransaction(tx) : undefined}
+              />
+            ))}
           </div>
         </>
       )}

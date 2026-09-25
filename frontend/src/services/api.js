@@ -29,8 +29,12 @@ api.interceptors.response.use(
       localStorage.removeItem('trustpay_token');
       localStorage.removeItem('trustpay_user');
       
-      // If not already on auth page, redirect
-      if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
+      // If not already on public/auth pages, redirect
+      if (
+        window.location.pathname !== '/' &&
+        !window.location.pathname.startsWith('/login') &&
+        !window.location.pathname.startsWith('/register')
+      ) {
         window.location.href = '/login?sessionExpired=true';
       }
     }

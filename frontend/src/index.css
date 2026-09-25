@@ -516,3 +516,60 @@ code {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* Responsive Table vs Cards (Mobile Usability Criterion 6 & 20) */
+.desktop-table-view {
+  display: block;
+}
+.mobile-cards-view {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .desktop-table-view {
+    display: none !important;
+  }
+  .mobile-cards-view {
+    display: block !important;
+  }
+}
+
+/* Mobile Touch Targets & Responsive Spacing (Criteria 1, 4, 7, 13, 20) */
+@media (max-width: 640px) {
+  .page-body {
+    padding: 14px 12px 76px !important;
+  }
+  .card {
+    padding: 16px !important;
+    border-radius: var(--radius-md) !important;
+  }
+  .card-header {
+    margin-bottom: 14px;
+    gap: 8px;
+  }
+  .card-title {
+    font-size: 16px;
+  }
+  .btn {
+    min-height: 42px;
+  }
+  .btn-sm {
+    min-height: 36px;
+  }
+  .modal-cta-group {
+    flex-direction: column !important;
+  }
+  .modal-cta-group .btn {
+    width: 100% !important;
+  }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
