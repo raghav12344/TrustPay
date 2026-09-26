@@ -11,7 +11,7 @@ def get_customer_transactions(
     Get all previous transactions for a customer.
 
     Only transactions that occurred before the current transaction
-    are returned to prevent data leakage.
+    are returned to prevent data leakage. Includes location telemetry.
     """
 
     connection = get_db_connection()
@@ -30,10 +30,15 @@ def get_customer_transactions(
                 t.transaction_type,
                 t.merchant,
                 t.transaction_time,
-                t.status
+                t.status,
+                l.city,
+                l.latitude,
+                l.longitude
             FROM transactions t
             INNER JOIN accounts a
                 ON t.account_id = a.account_id
+            LEFT JOIN locations l
+                ON t.location_id = l.location_id
             WHERE a.user_id = %s
               AND t.transaction_time < %s
             ORDER BY t.transaction_time ASC
@@ -53,3 +58,37 @@ def get_customer_transactions(
         if cursor is not None:
             cursor.close()
         connection.close()
+
+
+def get_location_by_id(location_id: int | None):
+    """
+    Fetch geographical coordinates and city for a specific location_id.
+    """
+    if location_id is None:
+        return None
+
+    connection = get_db_connection()
+    cursor = None
+
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT
+                location_id,
+                city,
+                state,
+                country,
+                latitude,
+                longitude
+            FROM locations
+            WHERE location_id = %s
+            """,
+            (location_id,),
+        )
+        return cursor.fetchone()
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        connection.close()

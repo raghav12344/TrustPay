@@ -19,5 +19,7 @@ class TransactionRequest(BaseModel):
     transaction_time: datetime
 
     device_id: int | None = None
-
     location_id: int | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    balance: float | None = None

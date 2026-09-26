@@ -13,46 +13,67 @@ const analyzeTransaction = async (transaction) => {
     console.log("TRANSACTION:", transaction);
     console.log("====================================");
 
-    try {
-        const response = await axios.post(
-            `${ML_SERVICE_URL}/api/analyze`,
-            transaction,
-            {
-                timeout: 30000,
-                headers: {
-                    "Content-Type": "application/json",
-                },
+    const maxRetries = 2;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            if (attempt > 1) {
+                console.log(`[ML_SERVICE] Retrying call to ML service (Attempt ${attempt}/${maxRetries})...`);
             }
-        );
 
-        console.log("====================================");
-        console.log("ML SERVICE RESPONSE RECEIVED");
-        console.log("STATUS:", response.status);
-        console.log("DATA:", response.data);
-        console.log("====================================");
+            const response = await axios.post(
+                `${ML_SERVICE_URL}/api/analyze`,
+                transaction,
+                {
+                    timeout: 35000,
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
 
-        return response.data;
+            console.log("====================================");
+            console.log("ML SERVICE RESPONSE RECEIVED");
+            console.log("STATUS:", response.status);
+            console.log("DATA:", response.data);
+            console.log("====================================");
 
-    } catch (error) {
-        console.error("====================================");
-        console.error("ML SERVICE REQUEST FAILED");
+            return response.data;
 
-        if (error.response) {
-            console.error("STATUS:", error.response.status);
-            console.error("RESPONSE DATA:", error.response.data);
-            console.error("RESPONSE HEADERS:", error.response.headers);
-        } else if (error.request) {
-            console.error("NO RESPONSE RECEIVED FROM ML SERVICE");
-            console.error("REQUEST ERROR:", error.message);
-        } else {
-            console.error("AXIOS ERROR:", error.message);
+        } catch (error) {
+            lastError = error;
+            const status = error.response ? error.response.status : null;
+
+            // If Render returned 502/503/504 or connection reset during spin-up, wait and retry once
+            if ((status === 502 || status === 503 || status === 504 || error.code === "ECONNRESET") && attempt < maxRetries) {
+                console.warn(`[ML_SERVICE] Received HTTP ${status} (container waking up). Retrying in 3 seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+                continue;
+            }
+
+            console.error("====================================");
+            console.error("ML SERVICE REQUEST FAILED");
+
+            if (error.response) {
+                console.error("STATUS:", error.response.status);
+                console.error("RESPONSE DATA:", error.response.data);
+                console.error("RESPONSE HEADERS:", error.response.headers);
+            } else if (error.request) {
+                console.error("NO RESPONSE RECEIVED FROM ML SERVICE");
+                console.error("REQUEST ERROR:", error.message);
+            } else {
+                console.error("AXIOS ERROR:", error.message);
+            }
+
+            console.error("FULL ERROR:", error);
+            console.error("====================================");
+
+            throw error;
         }
-
-        console.error("FULL ERROR:", error);
-        console.error("====================================");
-
-        throw error;
     }
+
+    throw lastError;
 };
 
 module.exports = {

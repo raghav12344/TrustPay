@@ -231,6 +231,12 @@ const createTransaction = async (req, res) => {
             device_id: deviceId,
 
             location_id: locationId,
+
+            latitude: location ? location.latitude : (latitude !== undefined && latitude !== null ? Number(latitude) : null),
+
+            longitude: location ? location.longitude : (longitude !== undefined && longitude !== null ? Number(longitude) : null),
+
+            balance: Number(currentAccount.balance),
         };
 
 

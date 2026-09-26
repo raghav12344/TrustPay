@@ -237,41 +237,64 @@ A rigorous 20-point UI/UX audit was conducted across four standardized responsiv
 
 ---
 
-### 3.2 Behavioral Feature Engineering Pipeline (`feature_service.py`)
+### 3.2 Dynamic Behavioral & Spatial Feature Engineering Pipeline (`feature_service.py`)
 
-The ML service queries the database for the customer's historical transactions up to the current transaction timestamp and computes 14 behavioral features:
+The ML service queries the database for the customer's historical transactions up to the current transaction timestamp (preventing data leakage) and computes comprehensive multi-dimensional behavioral, spatial, and monetary telemetry:
 
 1. **Temporal Features**:
-   - `hour_of_day`: Normalized transaction hour (0–23).
-   - `day_of_week`: Day index (0–6).
-   - `is_unusual_time`: Binary flag indicating if the transaction occurs outside the customer's typical active window (e.g. 2:00 AM for a customer who only transacts during business hours).
-2. **Monetary Velocity & Deviation**:
-   - `amount`: Raw transaction magnitude.
-   - `customer_mean_amount`: Rolling historical average.
-   - `customer_std_amount`: Standard deviation of customer transactions.
-   - `amount_to_mean_ratio`: Multiplier of the current amount relative to historical spend.
-   - `is_unusual_amount`: Evaluates to `1` if amount exceeds $\mu + 2.5\sigma$ or threshold multiplier.
-3. **Hardware & Geolocation Consistency**:
+   - `transaction_hour`: Normalized transaction hour (0–23).
+   - `is_night`: Binary flag (`1` if $H \ge 22 \lor H < 6$).
+   - `is_weekend`: Binary flag (`1` if $\text{Weekday} \ge 5$).
+   - `is_unusual_time`: Binary flag indicating if the transaction occurs outside the customer's typical active hour window ($\text{Hour} < \min(H) \lor \text{Hour} > \max(H)$).
+2. **Monetary Velocity & Statistical Spend Profiling**:
+   - `amount`: Raw transaction magnitude ($X$).
+   - `historical_amount_mean`: Rolling historical average ($\mu$).
+   - `historical_amount_std`: Rolling standard deviation ($\sigma$).
+   - `amount_to_historical_mean`: Ratio of current expenditure to historical average ($R = X / \mu$).
+   - `amount_zscore`: Normalized dispersion standard score ($Z = (X - \mu)/\sigma$).
+   - `is_unusual_amount`: Evaluates to `1` if amount exceeds $3 \times \mu$.
+   - `is_extreme_outlier`: Asserts `1` if standard score $Z \ge 3.5$ or spend ratio $R \ge 5.0$.
+3. **Sliding-Window Velocity Aggregations**:
+   - `transactions_last_10m` & `amount_last_10m`: Rapid burst velocity in the last 600 seconds.
+   - `is_burst_velocity`: Evaluates to `1` if $\ge 3$ transactions occur within 10 minutes (bot / card-testing indicator).
+   - `transactions_last_1h`: Transaction velocity in the last 3,600 seconds.
+   - `transactions_last_24h` & `amount_last_24h`: Transaction count and volume in the last 24 hours.
+   - `transactions_last_7d` & `amount_last_7d`: Cumulative weekly velocity and volume.
+4. **Hardware & Spatial Geolocation Velocity**:
    - `known_device`: Binary flag (`1` if device identifier matches previous trusted logins).
    - `new_device`: Binary flag (`1` if hardware profile has never been registered by this user).
    - `known_location`: Binary flag (`1` if transaction originates from user's standard city/state).
-   - `location_changed`: Binary flag (`1` if geographical coordinates indicate an abrupt geographical jump).
-4. **Account Maturity Index**:
-   - `transaction_count`: Cumulative lifetime transaction count.
-   - `history_confidence`: Categorical index (`NONE` for cold start, `NEW` for 1–4 transactions, `ESTABLISHED` for $\ge 5$ transactions).
+   - `location_changed`: Binary flag (`1` if location ID differs from previous transaction history).
+   - `distance_from_last_km`: Great-circle Haversine spatial distance ($\Delta d$ in km) between consecutive transactions.
+   - `travel_speed_kmh`: Real-world implied velocity ($V = \Delta d / \Delta t$ in km/h).
+   - `is_impossible_travel`: Physical teleportation flag asserted if $V > 800\text{ km/h}$ over $\Delta d > 100\text{ km}$.
+   - `min_distance_to_known_locations_km` & `is_distant_location`: Minimum distance to any historically familiar centroid ($> 500\text{ km}$).
+5. **Capital Depletion (Balance Drain) Telemetry**:
+   - `balance_drain_ratio`: Proportion of available account balance demanded ($\min(1.0, X / \text{Balance})$).
+   - `is_high_balance_drain`: Asserts `1` if drain ratio $\ge 0.85$, amount $\ge \text{₹}1,000$, and initiated from an unverified device.
+6. **Account Maturity Index**:
+   - `transaction_count`: Cumulative lifetime transaction count ($N$).
+   - `history_confidence`: Categorical confidence tier (`NONE` for $N=0$, `LIMITED` for $1 \le N < 3$, `MODERATE` for $3 \le N < 5$, `ESTABLISHED` for $N \ge 5$).
 
 ---
 
 ### 3.3 Supervised Machine Learning Model (`train.py`, `predict.py`)
 
-- **Algorithm**: LightGBM (Light Gradient Boosting Machine).
-- **Output**:
-  - `fraud_probability`: Continuous scalar $\in [0.0, 1.0]$.
+- **Algorithm**: LightGBM (Light Gradient Boosting Machine) compiled decision tree ensemble.
+- **Input Dimensionality**: Evaluates the 20-dimensional core behavioral feature vector in $< 15\text{ms}$.
+- **Calibrated Multiplier Scoring**: Combines the raw model probability with physical spatial and velocity constraints:
+  - Impossible travel ($V > 800\text{ km/h}$) automatically floors calibrated risk at $88.0$.
+  - Rapid burst velocity ($3+\text{ tx in 10m}$) applies a $+25.0$ risk penalty.
+  - High balance drain ($>85\%$ depletion) applies a $+20.0$ risk penalty.
+  - Extreme spend outlier ($Z \ge 3.5$) applies a $+15.0$ risk penalty.
+- **Output Metrics**:
+  - `fraud_probability`: Calibrated continuous probability $\in [0.0, 1.0]$.
+  - `base_model_probability`: Uncalibrated raw tree inference probability.
   - `risk_score`: Calibrated integer score $\in [0, 100]$.
   - `risk_level`:
-    - `LOW_RISK`: Score $< 30$
-    - `MEDIUM_RISK`: $30 \le \text{Score} < 70$
-    - `HIGH_RISK`: $\text{Score} \ge 70$
+    - `LOW`: Calibrated score $< 30$
+    - `MEDIUM`: $30 \le \text{Calibrated Score} < 70$
+    - `HIGH`: $\text{Calibrated Score} \ge 70$
 
 ---
 
@@ -284,40 +307,57 @@ To transform statistical probabilities into compliance intelligence, the service
   {
     "risk_level": "HIGH",
     "reasons": [
-      "Transaction amount (₹50,000) is 12x higher than historical average (₹4,200).",
-      "Initiated from an unrecognized device and unusual IP address.",
-      "Geographical location mismatch with no preceding activity."
+      "CRITICAL: Impossible travel detected (1,162.1 km at implied speed of 4,648.3 km/h).",
+      "Transaction amount (₹50,000) exceeds historical average by 12x.",
+      "High balance depletion: withdraws 92% of available account balance from an unverified device."
     ],
     "requires_admin_review": true,
-    "summary": "High-risk anomaly indicating potential account takeover."
+    "summary": "High-risk anomaly indicating potential account takeover with impossible travel."
   }
   ```
 - **Deterministic Fallback**: If the external Groq LLM API is rate-limited, unreachable, or times out, the analyst invokes `_fallback_analysis()`, which preserves the LightGBM model score and sets standard explanation notes without blocking the pipeline.
 
 ---
 
-### 3.5 Hybrid Decision Engine (`engine.py`)
+### 3.5 Hardened Deterministic Decision Engine (`engine.py`)
 
-The final action is governed by a deterministic rule engine that fuses the ML risk probability, GenAI insights, and account maturity flags:
+The final settlement action is governed by a deterministic rule engine that fuses calibrated ML risk probabilities, physical telemetry constraints, and account maturity flags:
 
 ```python
 # Pseudo-logic of make_final_decision:
-if transaction_count == 0:  # Cold-start policy
+
+# Rule 1: Cold-Start Guard (First-time user protection)
+if transaction_count == 0:
     if fraud_probability >= 0.70:
         return {"final_risk_level": "HIGH", "action": "ADMIN_REVIEW"}
     return {"final_risk_level": "MEDIUM", "action": "MONITOR"}
 
-# Established Customer Policy
-if new_device and location_changed and unusual_amount:
+# Rule 2: Impossible Travel Threat (Physical teleportation / Proxy jumping)
+if is_impossible_travel:
     return {"final_risk_level": "HIGH", "action": "ADMIN_REVIEW"}
 
-if fraud_probability >= 0.70 and unusual_amount:
+# Rule 3: Account Takeover (ATO) Triad
+if new_device and (location_changed or is_distant_location) and (unusual_amount or is_high_balance_drain):
     return {"final_risk_level": "HIGH", "action": "ADMIN_REVIEW"}
 
-if new_device or location_changed or unusual_amount or fraud_probability >= 0.30:
+# Rule 4: Rapid Burst / Card Testing Attack
+if is_burst_velocity and (new_device or fraud_probability >= 0.40):
+    return {"final_risk_level": "HIGH", "action": "ADMIN_REVIEW"}
+
+# Rule 5: Capital Depletion on Unverified Device
+if is_high_balance_drain and new_device:
+    return {"final_risk_level": "HIGH", "action": "ADMIN_REVIEW"}
+
+# Rule 6: High ML Probability + Extreme Spend Outlier
+if (fraud_probability >= 0.70 and (unusual_amount or is_extreme_outlier)) or (is_extreme_outlier and new_device):
+    return {"final_risk_level": "HIGH", "action": "ADMIN_REVIEW"}
+
+# Rule 7: Moderate / Isolated Discrepancies
+if new_device or location_changed or unusual_amount or is_burst_velocity or is_distant_location or fraud_probability >= 0.30:
     return {"final_risk_level": "MEDIUM", "action": "MONITOR"}
 
-if known_device and known_location and not unusual_amount and fraud_probability < 0.30:
+# Rule 8: Familiar Customer Baseline (Instant Clearance)
+if known_device and known_location and not unusual_amount and not unusual_time and not is_burst_velocity and fraud_probability < 0.30:
     return {"final_risk_level": "LOW", "action": "AUTO_APPROVE"}
 ```
 
@@ -544,10 +584,10 @@ flowchart TD
     
     subgraph SentinelEngine["Sentinel AI Pipeline (FastAPI)"]
         MLDispatch --> FetchHistory["Query Customer History"]
-        FetchHistory --> FeatEng["Extract 14 Behavioral Features\n(Velocity, Deviation, Device, Geo)"]
+        FetchHistory --> FeatEng["Extract Behavioral & Spatial Telemetry\n(Velocity, Spatial Speed, Drain, Geo)"]
         FeatEng --> LightGBM["LightGBM Classifier\n(Calculates Risk Score 0-100)"]
         FeatEng --> GroqGenAI["Groq Llama 3.3 GenAI\n(Generates Natural Language Explanation)"]
-        LightGBM --> DecisionEngine["Hybrid Decision Engine\nmake_final_decision()"]
+        LightGBM --> DecisionEngine["Hardened Decision Engine\nmake_final_decision()"]
         GroqGenAI --> DecisionEngine
     end
     
@@ -597,25 +637,26 @@ flowchart TD
   - Inserts transaction with `status = 'PENDING'`.
   - **Trigger Activation**: Database trigger `trg_transaction_before_insert` executes before write, validating `amount > 0`.
 
-#### Phase 3: Behavioral Feature Engineering
+#### Phase 3: Dynamic Behavioral & Spatial Feature Engineering
 - **Actor**: Python FastAPI Service ([`feature_service.py`](file:///D:/projects/trustpay/ml-service/app/services/feature_service.py)).
-- **Historical Query**: Retrieves previous customer transactions to construct a statistical behavioral baseline.
-- **Transformation**: Computes 14 distinct features:
-  - Velocity counts and transaction frequency.
-  - Spend deviation: compares current amount to rolling $\mu$ and $\sigma$ (`is_unusual_amount`).
-  - Spatial consistency: computes distance from regular transacting cities (`location_changed`, `known_location`).
-  - Hardware familiarity: cross-references active device with trusted hardware profiles (`new_device`, `known_device`).
-  - Temporal consistency: flags off-hour activity (`is_unusual_time`).
+- **Historical Query**: Retrieves previous customer transactions with location telemetry to construct a statistical and spatial baseline without data leakage.
+- **Transformation & Metrics Computed**:
+  - **Burst & Velocity Sliding Windows**: 10-minute burst count (`transactions_last_10m`, `is_burst_velocity`), 1-hour, 24-hour, and 7-day velocity and spend totals.
+  - **Monetary Dispersion**: Rolling mean ($\mu$), standard deviation ($\sigma$), ratio ($R$), and standard score ($Z = (X - \mu)/\sigma$, `is_extreme_outlier`).
+  - **Spatial Velocity & Distance**: Great-circle Haversine distance ($\Delta d$ in km), elapsed interval ($\Delta t$), implied speed ($V = \Delta d / \Delta t$ in km/h), and impossible travel flag (`is_impossible_travel`).
+  - **Hardware Familiarity**: Device fingerprint registry set-membership (`new_device`, `known_device`).
+  - **Capital Depletion**: Account balance drain ratio (`balance_drain_ratio`, `is_high_balance_drain`).
+  - **Account Maturity Index**: Cold-start confidence grading (`NONE`, `LIMITED`, `MODERATE`, `ESTABLISHED`).
 
-#### Phase 4: Dual-Intelligence Inference
-1. **LightGBM Classifier Inference** ([`predict.py`](file:///D:/projects/trustpay/ml-service/app/ml/predict.py)):
-   - Processes feature vector to calculate `fraud_probability` $\in [0.0, 1.0]$ and calibrated integer `risk_score` $\in [0, 100]$.
+#### Phase 4: Dual-Intelligence Inference & Calibration
+1. **LightGBM Classifier Inference & Score Calibration** ([`predict.py`](file:///D:/projects/trustpay/ml-service/app/ml/predict.py)):
+   - Processes the 20-dimensional feature vector in $< 15\text{ms}$ and applies deterministic physical anomaly multipliers (impossible travel floor, burst velocity penalty, balance drain penalty).
 2. **Groq Llama 3.3 GenAI Analysis** ([`analyst.py`](file:///D:/projects/trustpay/ml-service/app/genai/analyst.py)):
    - Evaluates the transaction context against customer baselines.
-   - Generates bulleted justifications and human-readable risk rationales.
+   - Generates bulleted justifications and human-readable risk rationales citing exact speed, distance, and drain metrics.
    - Falls back gracefully to deterministic templates if API limits or network latency thresholds are breached.
 
-#### Phase 5: Hybrid Decision Branching
+#### Phase 5: Hardened Decision Branching
 The decision engine ([`engine.py`](file:///D:/projects/trustpay/ml-service/app/decision/engine.py)) evaluates three branching outcomes:
 
 - **Branch A: Automated Clearance (Low / Medium Risk)**

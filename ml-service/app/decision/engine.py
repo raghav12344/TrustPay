@@ -62,6 +62,42 @@ def make_final_decision(
     )
 
     # ---------------------------------------------------------
+    # Advanced Telemetry Signals
+    # ---------------------------------------------------------
+
+    is_impossible_travel = bool(
+        features.get("is_impossible_travel", 0)
+    )
+
+    travel_speed_kmh = float(
+        features.get("travel_speed_kmh", 0.0)
+    )
+
+    distance_from_last_km = float(
+        features.get("distance_from_last_km", 0.0)
+    )
+
+    is_burst_velocity = bool(
+        features.get("is_burst_velocity", 0)
+    )
+
+    transactions_last_10m = int(
+        features.get("transactions_last_10m", 0)
+    )
+
+    is_high_balance_drain = bool(
+        features.get("is_high_balance_drain", 0)
+    )
+
+    is_extreme_outlier = bool(
+        features.get("is_extreme_outlier", 0)
+    )
+
+    is_distant_location = bool(
+        features.get("is_distant_location", 0)
+    )
+
+    # ---------------------------------------------------------
     # Count behavioral anomalies
     # ---------------------------------------------------------
 
@@ -71,8 +107,19 @@ def make_final_decision(
             unusual_time,
             new_device,
             location_changed,
+            is_impossible_travel,
+            is_burst_velocity,
+            is_high_balance_drain,
+            is_extreme_outlier,
         ]
     )
+
+    reasons = list(genai_analysis.get("reasons", []))
+
+    def ensure_reason(msg: str):
+        if msg and not any(msg.lower() in r.lower() for r in reasons):
+            reasons.insert(0, msg)
+        return reasons
 
     # ---------------------------------------------------------
     # COLD START
@@ -101,9 +148,8 @@ def make_final_decision(
                 "final_risk_level": "HIGH",
                 "action": "ADMIN_REVIEW",
                 "risk_signals": 1,
-                "reasons": genai_analysis.get(
-                    "reasons",
-                    []
+                "reasons": ensure_reason(
+                    "Elevated ML risk detected on initial customer transaction."
                 ),
             }
 
@@ -112,10 +158,7 @@ def make_final_decision(
             "final_risk_level": "MEDIUM",
             "action": "MONITOR",
             "risk_signals": 0,
-            "reasons": genai_analysis.get(
-                "reasons",
-                []
-            ),
+            "reasons": reasons,
         }
 
     # ---------------------------------------------------------
@@ -125,45 +168,90 @@ def make_final_decision(
     # ---------------------------------------------------------
 
     # ---------------------------------------------------------
-    # HIGH RISK:
+    # HIGH RISK: IMPOSSIBLE TRAVEL (Teleportation / Geo-Hopping)
+    # ---------------------------------------------------------
+
+    if is_impossible_travel:
+
+        return {
+            "final_risk_level": "HIGH",
+            "action": "ADMIN_REVIEW",
+            "risk_signals": behavioral_signals,
+            "reasons": ensure_reason(
+                f"CRITICAL: Impossible travel detected ({distance_from_last_km:.1f} km at implied speed of {travel_speed_kmh:.1f} km/h)."
+            ),
+        }
+
+    # ---------------------------------------------------------
+    # HIGH RISK: ACCOUNT TAKEOVER (ATO) TRIAD
     #
-    # New device + changed location + unusual amount
+    # New device + changed/distant location + unusual amount/drain
     # ---------------------------------------------------------
 
     if (
         new_device
-        and location_changed
-        and unusual_amount
+        and (location_changed or is_distant_location)
+        and (unusual_amount or is_high_balance_drain)
     ):
 
         return {
             "final_risk_level": "HIGH",
             "action": "ADMIN_REVIEW",
             "risk_signals": behavioral_signals,
-            "reasons": genai_analysis.get(
-                "reasons",
-                []
+            "reasons": ensure_reason(
+                "Potential Account Takeover: Novel device and geographic shift combined with abnormal capital withdrawal."
+            ),
+        }
+
+    # ---------------------------------------------------------
+    # HIGH RISK: BURST VELOCITY / AUTOMATED BOT TESTING
+    # ---------------------------------------------------------
+
+    if is_burst_velocity and (new_device or fraud_probability >= 0.40):
+
+        return {
+            "final_risk_level": "HIGH",
+            "action": "ADMIN_REVIEW",
+            "risk_signals": behavioral_signals,
+            "reasons": ensure_reason(
+                f"Velocity Spike: Rapid burst of {transactions_last_10m} transactions initiated within 10 minutes."
+            ),
+        }
+
+    # ---------------------------------------------------------
+    # HIGH RISK: CAPITAL DEPLETION (BALANCE DRAIN) ON FRESH DEVICE
+    # ---------------------------------------------------------
+
+    if is_high_balance_drain and new_device:
+
+        return {
+            "final_risk_level": "HIGH",
+            "action": "ADMIN_REVIEW",
+            "risk_signals": behavioral_signals,
+            "reasons": ensure_reason(
+                "High balance depletion: transaction attempts to withdraw over 85% of available funds from an unverified device."
             ),
         }
 
     # ---------------------------------------------------------
     # HIGH RISK:
     #
-    # Very high ML probability + unusual customer amount
+    # Very high ML probability + unusual customer amount or extreme outlier
     # ---------------------------------------------------------
 
     if (
         fraud_probability >= 0.70
-        and unusual_amount
+        and (unusual_amount or is_extreme_outlier)
+    ) or (
+        is_extreme_outlier and new_device
     ):
 
         return {
             "final_risk_level": "HIGH",
             "action": "ADMIN_REVIEW",
             "risk_signals": behavioral_signals,
-            "reasons": genai_analysis.get(
-                "reasons",
-                []
+            "reasons": ensure_reason(
+                "Severe transaction value outlier significantly exceeding customer historical expenditure."
             ),
         }
 
@@ -173,6 +261,8 @@ def make_final_decision(
     # New device
     # OR changed location
     # OR unusual amount
+    # OR burst velocity
+    # OR distant location
     # OR moderate ML risk
     # ---------------------------------------------------------
 
@@ -180,6 +270,8 @@ def make_final_decision(
         new_device
         or location_changed
         or unusual_amount
+        or is_burst_velocity
+        or is_distant_location
         or fraud_probability >= 0.30
     ):
 
@@ -187,10 +279,7 @@ def make_final_decision(
             "final_risk_level": "MEDIUM",
             "action": "MONITOR",
             "risk_signals": behavioral_signals,
-            "reasons": genai_analysis.get(
-                "reasons",
-                []
-            ),
+            "reasons": reasons,
         }
 
     # ---------------------------------------------------------
@@ -204,6 +293,7 @@ def make_final_decision(
         and known_location
         and not unusual_amount
         and not unusual_time
+        and not is_burst_velocity
         and fraud_probability < 0.30
     ):
 
@@ -211,10 +301,7 @@ def make_final_decision(
             "final_risk_level": "LOW",
             "action": "AUTO_APPROVE",
             "risk_signals": behavioral_signals,
-            "reasons": genai_analysis.get(
-                "reasons",
-                []
-            ),
+            "reasons": reasons,
         }
 
     # ---------------------------------------------------------
@@ -225,8 +312,5 @@ def make_final_decision(
         "final_risk_level": "LOW",
         "action": "AUTO_APPROVE",
         "risk_signals": behavioral_signals,
-        "reasons": genai_analysis.get(
-            "reasons",
-            []
-        ),
+        "reasons": reasons,
     }

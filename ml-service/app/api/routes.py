@@ -10,6 +10,7 @@ from app.schemas.prediction import (
 
 from app.services.transaction_service import (
     get_customer_transactions,
+    get_location_by_id,
 )
 
 from app.services.feature_service import (
@@ -66,6 +67,26 @@ def analyze_transaction_route(
     current_transaction = (
         transaction.model_dump()
     )
+
+    # Resolve GPS coordinates if location_id is present but coordinates not provided
+    if current_transaction.get("location_id") and (
+        current_transaction.get("latitude") is None
+        or current_transaction.get("longitude") is None
+    ):
+        loc_row = get_location_by_id(current_transaction["location_id"])
+        if loc_row:
+            current_transaction["latitude"] = (
+                float(loc_row["latitude"])
+                if loc_row.get("latitude") is not None
+                else None
+            )
+            current_transaction["longitude"] = (
+                float(loc_row["longitude"])
+                if loc_row.get("longitude") is not None
+                else None
+            )
+            current_transaction["city"] = loc_row.get("city")
+
 
     # ---------------------------------------------------------
     # 3. Build customer behavioral features

@@ -185,6 +185,62 @@ def build_genai_context(
                     "is_unusual_time"
                 ]
             ),
+
+            "distance_from_last_km": (
+                features.get(
+                    "distance_from_last_km",
+                    0.0
+                )
+            ),
+
+            "travel_speed_kmh": (
+                features.get(
+                    "travel_speed_kmh",
+                    0.0
+                )
+            ),
+
+            "is_impossible_travel": (
+                features.get(
+                    "is_impossible_travel",
+                    0
+                )
+            ),
+
+            "transactions_last_10m": (
+                features.get(
+                    "transactions_last_10m",
+                    0
+                )
+            ),
+
+            "is_burst_velocity": (
+                features.get(
+                    "is_burst_velocity",
+                    0
+                )
+            ),
+
+            "balance_drain_ratio": (
+                features.get(
+                    "balance_drain_ratio",
+                    0.0
+                )
+            ),
+
+            "is_high_balance_drain": (
+                features.get(
+                    "is_high_balance_drain",
+                    0
+                )
+            ),
+
+            "is_extreme_outlier": (
+                features.get(
+                    "is_extreme_outlier",
+                    0
+                )
+            ),
         },
 
         "ml_prediction": {
