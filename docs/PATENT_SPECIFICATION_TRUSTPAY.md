@@ -24,7 +24,7 @@ THE PATENTS RULES, 2003
    * Registration No.: 20243236
    * Nationality: Indian
 
-3. **Rihabh Singh**
+3. **Rishabh Singh**
    * Registration No.: 20243235
    * Nationality: Indian
 
@@ -165,5 +165,5 @@ A computer-implemented system and method for real-time transaction anomaly asses
 
 1. ____________________________ (Raghav Gupta)
 2. ____________________________ (Rishabh Srivastava)
-3. ____________________________ (Rihabh Singh)
+3. ____________________________ (Rishabh Singh)
 4. ____________________________ (Prince Keshari)

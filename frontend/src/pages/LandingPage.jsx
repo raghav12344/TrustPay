@@ -79,7 +79,7 @@ export const LandingPage = () => {
       initials: 'RS',
     },
     {
-      name: 'Rihabh Singh',
+      name: 'Rishabh Singh',
       regNo: '20243235',
       initials: 'RS',
     },

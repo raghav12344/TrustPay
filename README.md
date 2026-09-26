@@ -13,7 +13,7 @@
 | :---: | :--- | :---: | :--- |
 | **Member 1** | **Raghav Gupta** | `20243226` | B.Tech • Computer Science & Engineering |
 | **Member 2** | **Rishabh Srivastava** | `20243236` | B.Tech • Computer Science & Engineering |
-| **Member 3** | **Rihabh Singh** | `20243235` | B.Tech • Computer Science & Engineering |
+| **Member 3** | **Rishabh Singh** | `20243235` | B.Tech • Computer Science & Engineering |
 | **Member 4** | **Prince Keshari** | `20243218` | B.Tech • Computer Science & Engineering |
 
 ---
@@ -155,7 +155,7 @@ flowchart TB
    - Prominently showcases the 4 capstone project contributors in clean, balanced cards with high-contrast monospace registration badges:
      - **Raghav Gupta** (`20243226`)
      - **Rishabh Srivastava** (`20243236`)
-     - **Rihabh Singh** (`20243235`)
+     - **Rishabh Singh** (`20243235`)
      - **Prince Keshari** (`20243218`)
    - B.Tech • Computer Science & Engineering • Final Year Major Project 2026.
 
@@ -846,6 +846,6 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 ### 8.2 Project Team Credentials
 - **Raghav Gupta** (Registration Number: `20243226`) — B.Tech • Computer Science & Engineering
 - **Rishabh Srivastava** (Registration Number: `20243236`) — B.Tech • Computer Science & Engineering
-- **Rihabh Singh** (Registration Number: `20243235`) — B.Tech • Computer Science & Engineering
+- **Rishabh Singh** (Registration Number: `20243235`) — B.Tech • Computer Science & Engineering
 - **Prince Keshari** (Registration Number: `20243218`) — B.Tech • Computer Science & Engineering
 
