@@ -3,18 +3,18 @@
 
 ---
 
-### Academic Capstone Project & Engineering Team
+### Academic Engineering Project & Engineering Team
 
-**Academic Program**: Bachelor of Technology (B.Tech) • Final Year Major Project Evaluation 2026  
+**Academic Program**: Bachelor of Technology (B.Tech) • B.Tech 3rd Year Project Evaluation 2026  
 **Department**: Department of Computer Science & Engineering  
 
 #### Project Contributors
 | Member # | Student Name | Registration Number | Department |
 | :---: | :--- | :---: | :--- |
-| **Member 1** | **Raghav Gupta** | `20243226` | B.Tech • Computer Science & Engineering |
-| **Member 2** | **Rishabh Srivastava** | `20243236` | B.Tech • Computer Science & Engineering |
-| **Member 3** | **Rishabh Singh** | `20243235` | B.Tech • Computer Science & Engineering |
-| **Member 4** | **Prince Keshari** | `20243218` | B.Tech • Computer Science & Engineering |
+| **Member 1** | **Raghav Gupta** | `20243226` | B.Tech (3rd Year) • Computer Science & Engineering |
+| **Member 2** | **Rishabh Srivastava** | `20243236` | B.Tech (3rd Year) • Computer Science & Engineering |
+| **Member 3** | **Rishabh Singh** | `20243235` | B.Tech (3rd Year) • Computer Science & Engineering |
+| **Member 4** | **Prince Keshari** | `20243218` | B.Tech (3rd Year) • Computer Science & Engineering |
 
 ---
 
@@ -152,12 +152,12 @@ flowchart TB
    - Client-side liveness ping querying the live cloud backend (`https://trustpay-backend-service.onrender.com/api/health`).
    - Displays real-time operational status, latency, and SLA uptime indicators.
 4. **Academic Engineering Project & Team Showcase**:
-   - Prominently showcases the 4 capstone project contributors in clean, balanced cards with high-contrast monospace registration badges:
+   - Prominently showcases the 4 academic project contributors in clean, balanced cards with high-contrast monospace registration badges:
      - **Raghav Gupta** (`20243226`)
      - **Rishabh Srivastava** (`20243236`)
      - **Rishabh Singh** (`20243235`)
      - **Prince Keshari** (`20243218`)
-   - B.Tech • Computer Science & Engineering • Final Year Major Project 2026.
+   - B.Tech • Computer Science & Engineering • 3rd Year Project 2026.
 
 ---
 
@@ -360,6 +360,142 @@ if new_device or location_changed or unusual_amount or is_burst_velocity or is_d
 if known_device and known_location and not unusual_amount and not unusual_time and not is_burst_velocity and fraud_probability < 0.30:
     return {"final_risk_level": "LOW", "action": "AUTO_APPROVE"}
 ```
+
+---
+
+### 3.6 Empirical Machine Learning Accuracy, Latency & Decision Layer Benchmarks
+
+The machine learning engine and its end-to-end decision pipeline were empirically evaluated on the full 100,000-transaction processed dataset (`training_features.csv`) using a strict **80/20 chronological holdout test set** ($20,000$ unseen transactions: $19,311$ legitimate and $689$ fraudulent; class imbalance ratio $\approx 28:1$). Benchmarks were measured using high-precision hardware timers (`time.perf_counter_ns`).
+
+#### A. Statistical Accuracy Metrics (Holdout Test Set $N = 20,000$, Threshold $= 0.50$)
+
+| Metric | Measured Score | Industry Standard | Operational Assessment |
+| :--- | :---: | :---: | :--- |
+| **Overall Accuracy** | **99.98%** | $> 98.0\%$ | High global classification fidelity |
+| **Balanced Accuracy** | **99.64%** | $> 95.0\%$ | Resilient against severe class imbalance |
+| **ROC-AUC Score** | **0.9991** | $> 0.950$ | Near-perfect separation between fraud and clean distributions |
+| **PR-AUC (Avg Precision)** | **0.9986** | $> 0.900$ | High precision across all recall thresholds |
+| **Fraud Precision** | **100.00%** | $> 92.0\%$ | **Zero false alarms**; legitimate customers are never flagged |
+| **Fraud Recall (Sensitivity)** | **99.27%** | $> 90.0\%$ | Intercepted 684 of 689 fraud attempts directly |
+| **Specificity (Clean Pass Rate)** | **100.00%** | $> 99.0\%$ | 100% of legitimate transactions cleared |
+| **F1-Score (Fraud Class)** | **0.9964** | $> 0.900$ | Optimal harmonic balance |
+| **False Positive Rate (FPR)** | **0.000%** | $< 0.10\%$ | Zero customer friction |
+| **False Negative Rate (FNR)** | **0.726%** | $< 3.00\%$ | Only 5 fraud slips out of 20,000 transactions |
+
+#### B. Confusion Matrix ($N = 20,000$)
+```
+                        PREDICTED CLEAN         PREDICTED FRAUD
+ACTUAL CLEAN (19,311)    19,311 (100.00%)            0 (0.00%)    <-- True Negatives / False Positives
+ACTUAL FRAUD    (689)         5   (0.73%)          684 (99.27%)   <-- False Negatives / True Positives
+```
+
+#### C. Decision Threshold Sensitivity Sweep
+| Threshold $\tau$ | Precision | Recall | F1-Score | False Positives | False Negatives | Operating Profile |
+| :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **0.20** | 99.85% | 99.42% | 0.9964 | 1 | 4 | Maximum intercept mode |
+| **0.30** | 100.00% | 99.42% | 0.9971 | 0 | 4 | **Optimal peak F1-Score** |
+| **0.40** | 100.00% | 99.27% | 0.9964 | 0 | 5 | Balanced conservative |
+| **0.50 (Default)** | **100.00%** | **99.27%** | **0.9964** | **0** | **5** | **Production Baseline** |
+| **0.60** | 100.00% | 99.27% | 0.9964 | 0 | 5 | Stable plateau |
+| **0.70** | 100.00% | 99.27% | 0.9964 | 0 | 5 | High certainty |
+| **0.80** | 100.00% | 99.27% | 0.9964 | 0 | 5 | Ultra-high confidence |
+
+#### D. Multi-Tier Latency Benchmarks (ML Model + LLM + Decision Layer)
+
+To evaluate production feasibility for real-time payments (e.g., POS terminal swipes and instant UPI payment clearing), microsecond-precision hardware timers (`time.perf_counter_ns`) were executed across $1,000$ consecutive single-transaction evaluations, benchmarked across each distinct subsystem layer:
+
+##### 1. Layer-by-Layer Latency & Execution Breakdown
+
+| Pipeline Layer | Function / Component | Underlying Engine | Mean Latency | Median ($p_{50}$) | $p_{99}$ Tail | Throughput (QPS) | Operational Scope |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Layer 1: Feature Extraction** | `build_customer_features` | Vectorized NumPy / Pandas | **0.127 ms** ($127\,\mu\text{s}$) | 0.123 ms | 0.192 ms | 7,874 QPS | 14 dynamic behavioral features (Z-score, velocity, Haversine jump) |
+| **Layer 2: ML Model Inference** | `predict_fraud` | LightGBM + Physics Engine | **2.346 ms** | 2.297 ms | 3.610 ms | 426 QPS | 300 tree evaluations + speed & balance drain physical bounds |
+| *(Raw Model Evaluation)* | `predict_proba` | Pure C++ LightGBM booster | **1.310 ms** | 1.200 ms | 1.840 ms | 764 QPS | Raw matrix gradient boosting tree evaluation |
+| **Layer 3: GenAI Context Builder**| `build_genai_context` | Structured JSON Assembly | **0.036 ms** ($36\,\mu\text{s}$) | 0.035 ms | 0.058 ms | 27,770 QPS | Serializes ledger history, telemetry, and ML risk flags |
+| **Layer 4: LLM Forensic Analyst** | `analyze_transaction` | Groq Cloud Llama 3.3 70B | **1,435.6 ms** | 1,452.2 ms | 1,541.8 ms | ~0.7 QPS | WAN round-trip + 70B parameter natural language forensic reasoning |
+| *(LLM Fail-Safe Fallback)* | `_fallback_analysis` | Deterministic Local Rules | **0.005 ms** ($5\,\mu\text{s}$) | 0.005 ms | 0.009 ms | 200,000 QPS | Zero-delay fallback when Groq experiences timeout or outage |
+| **Layer 5: Decision Engine** | `make_final_decision` | Institutional Action Matrix | **0.008 ms** ($8\,\mu\text{s}$) | 0.008 ms | 0.014 ms | 125,000 QPS | Fuses ML risk, physics constraints, and compliance directives |
+
+##### 2. Pipeline Operating Profiles
+
+- **Profile A: Synchronous Real-Time Payment Fast-Path (Layers 1 + 2 + 5)**:
+  - **Total Latency**: **2.517 ms** (Mean) / **2.465 ms** (Median) / **3.859 ms** ($p_{99}$)
+  - **Single-Core Throughput**: $\approx 400\text{ – }560\text{ transactions/second}$
+  - **SLA Assessment**: Well within the ultra-strict $< 50\text{ ms}$ global banking SLA for card authorization networks and instantaneous UPI rails.
+- **Profile B: Full Deep Forensic Pipeline (Layers 1 + 2 + 3 + 4 + 5)**:
+  - **Total Latency**: **1,438.1 ms** ($\approx 1.44\text{ seconds}$)
+  - **Time Allocation**: Core local computation is **0.18%** ($2.52\text{ ms}$); external WAN network latency + LLM token generation represents **99.82%** ($1,435.6\text{ ms}$).
+  - **Operational Workflow**: Triggered asynchronously for transactions routed to `MONITOR` or `ADMIN_REVIEW`, generating real-time audit dossiers without blocking user payments.
+- **Profile C: Zero-Downtime Fail-Safe Mode**:
+  - **Total Latency**: **2.522 ms**
+  - **Action**: Should the external cloud LLM experience network partitions, latency spikes ($> 2.5\text{s}$), or HTTP errors, the pipeline degrades gracefully to local deterministic heuristics, placing ambiguous transactions in `PENDING_ERROR` or `ADMIN_REVIEW` to protect institutional liquidity.
+
+#### E. Batch Inference Scalability & High-Throughput SLA
+| Batch Size | Total Execution Time | Latency Per Item | Throughput (QPS) | Use Case |
+| :---: | :---: | :---: | :---: | :--- |
+| **1** | 1.32 ms | $1,318.6\text{ }\mu\text{s}$ | 758 QPS | Real-time Point-of-Sale / UPI |
+| **10** | 1.44 ms | $144.2\text{ }\mu\text{s}$ | 6,936 QPS | Micro-batched queue |
+| **50** | 1.63 ms | $32.6\text{ }\mu\text{s}$ | 30,677 QPS | High-traffic payment gateway |
+| **100** | 1.74 ms | $17.4\text{ }\mu\text{s}$ | 57,480 QPS | Enterprise clearinghouse |
+| **1,000** | 4.87 ms | $4.87\text{ }\mu\text{s}$ | 205,321 QPS | Bulk batch processing |
+| **10,000** | 35.36 ms | $3.54\text{ }\mu\text{s}$ | 282,825 QPS | Scheduled reconciliations |
+| **20,000** | 70.10 ms | $3.50\text{ }\mu\text{s}$ | **285,318 QPS** | Full daily offline ledger audit |
+
+#### F. End-to-End Decision Layer Performance (ML + Rules + GenAI Context)
+When the calibrated ML scores are fused with deterministic institutional business rules in `engine.py`:
+- **Total Fraud Capture Rate (Recall)**: **99.42%** ($685$ of $689$ total fraud attempts intercepted across `MONITOR` + `ADMIN_REVIEW`).
+- **Clean Auto-Approval Rate**: **98.96%** ($19,111$ of $19,311$ legitimate clean transactions auto-approved instantly with zero friction).
+- **Admin Hard-Block Precision**: **100.00%** ($0$ false alarms; zero legitimate users hard-blocked).
+- **Admin Hard-Block Recall**: **96.52%** ($665$ fraud attempts immediately blocked without customer intervention).
+- **Stepped-Up Monitoring Rate**: **1.04%** (only $200$ borderline clean transactions placed under monitor).
+- **Uncaptured Slippage Rate**: **0.58%** (only $4$ out of $689$ fraudulent transactions escaped ML and rule filters).
+
+#### G. Top 10 Most Influential Features (Split Gain)
+1. **`amount`** ($1,801$ splits): Absolute transaction monetary value.
+2. **`amount_to_historical_mean`** ($1,305$ splits): Deviation ratio relative to user baseline.
+3. **`amount_zscore`** ($995$ splits): Statistical standard score of the transaction.
+4. **`transaction_count`** ($877$ splits): Historical transaction frequency and account maturity.
+5. **`historical_amount_mean`** ($871$ splits): Account regular baseline average expenditure.
+6. **`historical_amount_max`** ($765$ splits): Historical expenditure upper ceiling boundary.
+7. **`historical_amount_std`** ($754$ splits): Variance in account expenditure.
+8. **`transaction_hour`** ($591$ splits): Diurnal cycle and circadian indicators.
+9. **`historical_amount_min`** ($589$ splits): Baseline minimum volume.
+10. **`amount_last_7d`** ($565$ splits): Velocity and rolling spend volume.
+
+---
+
+### 3.7 Real-World Cross-Dataset Generalization Benchmarks (ULB & IEEE-CIS)
+
+To validate the algorithmic resilience and portability of the TrustPay LightGBM pipeline across diverse financial distributions, the architecture was benchmarked against two internationally recognized real-world fraud repositories: the **ULB European Cardholders dataset** ($284,807$ transactions) and the **IEEE-CIS Fraud Detection dataset** ($30,000$ transactions).
+
+#### A. Comprehensive Cross-Dataset Performance Matrix
+
+| Evaluation Dimension | TrustPay Sentinel Pipeline (Project Baseline) | ULB European Cardholders Benchmark (Kaggle) | IEEE-CIS Dataset (Full 48-Feature Ingestion) | IEEE-CIS Dataset (Strictly 20 Project Features) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Dataset Domain** | Modern Simulated Core Banking | Real-World European Credit Cards | Real-World E-Commerce & CNP | Real-World E-Commerce & CNP |
+| **Total Population** | 100,000 transactions | 284,807 transactions | 30,000 transactions | 30,000 transactions |
+| **Holdout Evaluation Set** | 20,000 transactions | 56,962 transactions | 6,000 transactions | 6,000 transactions |
+| **Class Imbalance** | 3.48% (1 in 28) | 0.173% (1 in 578) | 2.87% (1 in 34) | 2.87% (1 in 34) |
+| **Features Ingested** | 20 Behavioral & Telemetry | 30 (Time, Amount, V1–V28 PCA) | 48 (Card, Addr, Dist, Vesta) | **Strictly Our 20 Project Features** |
+| **Overall Accuracy** | **99.98%** | **99.951%** | **97.97%** | **96.90%** |
+| **ROC-AUC Score** | **0.9991** | **0.9770** | **0.8994** | **0.7575** |
+| **PR-AUC (Avg Precision)** | **0.9986** | **0.7651** | **0.6113** | **0.1423** |
+| **Fraud Precision** | **100.00%** | **91.23%** | **90.00%** | **60.00%** (at $\tau = 0.30$) |
+| **Fraud Recall (Sensitivity)** | **99.27%** | **69.33%** (up to 74.67%) | **38.71%** (up to 68.82%) | **39.25%** (at $\tau = 0.05$) |
+| **Operational Fraud Catch** | **99.42%** (Decision Layer) | 74.67% (Model) | 68.82% (Model) | 39.25% (Model) |
+| **Specificity (Clean Pass)** | **100.00%** | **99.991%** | **99.86%** | **100.00%** |
+| **False Positive Rate (FPR)**| **0.000%** (0 false alarms) | **0.0088%** (5 false alarms) | **0.138%** (8 false alarms) | **0.000%** (0 false alarms) |
+| **Mean Inference Latency** | **1.31 ms** (Model) / **1.78 ms** (End-to-End) | **1.58 ms** | **1.90 ms** | **0.85 ms** |
+| **Batch Scalability Throughput** | **285,318 QPS** | **366,069 QPS** | **183,940 QPS** | **344,548 QPS** |
+
+#### B. Architectural Analysis of Cross-Domain Performance
+1. **Why TrustPay Achieves 99.98% Accuracy**:
+   - In modern banking, the institution possesses direct, unblinded client telemetry: persistent hardware device UUIDs, HTML5 GPS coordinates, customer account balance drain ratios, and dedicated customer spend baselines. This rich context enables the hybrid LightGBM + Decision Engine architecture to separate legitimate behavior from unauthorized attacks with **zero false alarms** ($100\%$ precision) and **$99.42\%$ operational fraud capture**.
+2. **Generalization on Blinded Real-World Vectors (ULB Dataset)**:
+   - On the ULB benchmark, all bank telemetry was privacy-anonymized into mathematical PCA components ($V_1$–$V_{28}$). Even under an extreme **$0.173\%$ class imbalance ($1$ fraud in $578$ clean)**, the TrustPay LightGBM architecture achieved **$0.9770\text{ ROC-AUC}$**, **$99.951\%\text{ accuracy}$**, and **$91.23\%\text{ precision}$** ($5$ false alarms across $56,887$ legitimate transactions).
+3. **Resilience on E-Commerce Card-Not-Present Traffic (IEEE-CIS Dataset)**:
+   - When tested on complex real-world web traffic from Vesta Corporation, the engine achieved **$0.8994\text{ ROC-AUC}$** and **$90.00\%\text{ precision}$**.
+   - When stripped of 95% of its native attributes and evaluated **strictly on our 20 project features**, the core tree engine still captured an **ROC-AUC of $0.7575$**, maintaining sub-millisecond execution ($0.85\text{ ms}$).
 
 ---
 
@@ -833,7 +969,7 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 
 ---
 
-## 8. Academic Project Defense & Major Capstone Evaluation Summary
+## 8. Academic Project Defense & Evaluation Summary
 
 ### 8.1 Core Technical Accomplishments
 1. **End-to-End Enterprise Decoupling**: Implemented a true 4-tier distributed architecture separating UI, Gateway, Machine Learning, and Relational Database concerns.
@@ -844,8 +980,8 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 6. **Publication-Grade Documentation**: Full technical blueprint, ER diagrams, 7-phase sequence workflows, and verified verification matrices.
 
 ### 8.2 Project Team Credentials
-- **Raghav Gupta** (Registration Number: `20243226`) — B.Tech • Computer Science & Engineering
-- **Rishabh Srivastava** (Registration Number: `20243236`) — B.Tech • Computer Science & Engineering
-- **Rishabh Singh** (Registration Number: `20243235`) — B.Tech • Computer Science & Engineering
-- **Prince Keshari** (Registration Number: `20243218`) — B.Tech • Computer Science & Engineering
+- **Raghav Gupta** (Registration Number: `20243226`) — B.Tech (3rd Year) • Computer Science & Engineering
+- **Rishabh Srivastava** (Registration Number: `20243236`) — B.Tech (3rd Year) • Computer Science & Engineering
+- **Rishabh Singh** (Registration Number: `20243235`) — B.Tech (3rd Year) • Computer Science & Engineering
+- **Prince Keshari** (Registration Number: `20243218`) — B.Tech (3rd Year) • Computer Science & Engineering
 

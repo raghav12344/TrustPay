@@ -449,7 +449,7 @@ export const LandingPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <GraduationCap size={15} color="#93C5FD" />
             <span>
-              <strong>Academic Capstone:</strong> Department of Computer Science & Engineering • Final Year Evaluation 2026
+              <strong>Academic Project:</strong> Department of Computer Science & Engineering • B.Tech 3rd Year Evaluation 2026
             </span>
           </div>
 
@@ -765,7 +765,7 @@ export const LandingPage = () => {
                   padding: '10px 16px',
                 }}
               >
-                Meet Capstone Team →
+                Meet Project Team →
               </a>
             </div>
 
@@ -1499,7 +1499,7 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        {/* Capstone Team Showcase - Clean without roles */}
+        {/* 3rd Year Project Team Showcase - Clean without roles */}
         <section
           id="team"
           style={{
@@ -1530,7 +1530,7 @@ export const LandingPage = () => {
               Project Contributors & Engineers
             </h2>
             <p style={{ color: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: '15px' }}>
-              B.Tech Final Year Engineering Evaluation 2026
+              B.Tech 3rd Year Engineering Project Evaluation 2026
             </p>
           </div>
 
@@ -1596,7 +1596,7 @@ export const LandingPage = () => {
                   Reg: {member.regNo}
                 </div>
 
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>B.Tech • Computer Science & Engineering</p>
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>B.Tech (3rd Year) • Computer Science & Engineering</p>
               </div>
             ))}
           </div>
@@ -1647,7 +1647,7 @@ export const LandingPage = () => {
             </div>
 
             <div style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace', textAlign: 'right' }}>
-              Department of Computer Science & Engineering • B.Tech Capstone 2026<br />
+              Department of Computer Science & Engineering • B.Tech 3rd Year 2026<br />
               Deployed on Render Cloud • Aiven Cloud MySQL 8 Enterprise
             </div>
           </div>
