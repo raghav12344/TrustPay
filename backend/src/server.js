@@ -62,7 +62,7 @@ const { initRedis } = require("./config/redis");
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`TrustPay API running on port ${PORT}`);
     initRabbitMQ().catch((err) => {
         console.warn("[RABBITMQ] Initial connect warning:", err.message);
@@ -71,3 +71,10 @@ app.listen(PORT, () => {
         console.warn("[REDIS] Initial connect warning:", err.message);
     });
 });
+
+process.on("SIGTERM", () => {
+    console.log("[SERVER] SIGTERM received during rolling deploy — shutting down old instance cleanly.");
+    server.close(() => {
+        process.exit(0);
+    });
+});
