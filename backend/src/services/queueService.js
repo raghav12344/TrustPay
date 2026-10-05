@@ -109,8 +109,25 @@ const publishFraudEvaluation = async (payload) => {
     }
 };
 
+/**
+ * Lightweight keep-alive check for RabbitMQ connection and queue.
+ */
+const pingRabbitMQ = async () => {
+    try {
+        if (!channel) {
+            return false;
+        }
+        await channel.checkQueue(FRAUD_EVALUATION_QUEUE);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
 module.exports = {
     FRAUD_EVALUATION_QUEUE,
     initRabbitMQ,
     publishFraudEvaluation,
+    pingRabbitMQ,
 };
+

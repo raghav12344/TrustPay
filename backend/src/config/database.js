@@ -24,6 +24,23 @@ const pool = mysql.createPool({
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+    connectTimeout: 20000,
 });
 
-module.exports = pool;
+// Periodic lightweight heartbeat (every 4 minutes) to prevent Aiven Cloud MySQL
+// free-tier instances from powering off due to connection inactivity.
+const heartbeatInterval = setInterval(async () => {
+    try {
+        await pool.query("SELECT 1");
+    } catch (err) {
+        console.warn("[DB HEARTBEAT] Ping warning:", err.message);
+    }
+}, 4 * 60 * 1000);
+
+if (heartbeatInterval.unref) {
+    heartbeatInterval.unref();
+}
+
+module.exports = pool;

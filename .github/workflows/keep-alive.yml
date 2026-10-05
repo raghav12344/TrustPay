@@ -1,0 +1,33 @@
+name: TrustPay 6-Service Omnichannel Keep-Alive Heartbeat
+
+on:
+  schedule:
+    # Runs every 14 minutes to keep all 6 services (Frontend, Backend Gateway,
+    # Aiven MySQL, Render Redis, CloudAMQP RabbitMQ, and FastAPI ML Worker) active.
+    - cron: "*/14 * * * *"
+  workflow_dispatch:
+
+jobs:
+  keep-alive-ping:
+    name: "Heartbeat: All 6 TrustPay Cloud Services"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "1. Wake Backend Gateway + Redis + RabbitMQ + Aiven MySQL (/api/health)"
+        run: |
+          echo "Pinging Backend Gateway, Redis, RabbitMQ & MySQL..."
+          curl -fsS --max-time 60 https://trustpay-backend-service.onrender.com/api/health || true
+          echo ""
+
+      - name: "2. Verify Aiven MySQL Direct Query (/api/db-test)"
+        run: |
+          echo "Verifying Aiven MySQL active query..."
+          curl -fsS --max-time 60 https://trustpay-backend-service.onrender.com/api/db-test || true
+          echo ""
+
+      - name: "3. Wake Sentinel FastAPI ML Worker & MySQL Pool (/ & /health)"
+        run: |
+          echo "Pinging FastAPI ML Service..."
+          curl -fsS --max-time 60 https://trustpay-0h4e.onrender.com/ || true
+          echo ""
+          curl -fsS --max-time 60 https://trustpay-0h4e.onrender.com/health || true
+          echo ""

@@ -43,6 +43,19 @@ def root():
 
 @app.get("/health")
 def health():
+    db_status = "connected"
+    try:
+        from app.config.database import get_db_connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        cursor.close()
+        conn.close()
+    except Exception:
+        db_status = "reconnecting"
+
     return {
         "status": "healthy",
-    }
+        "database": db_status,
+    }

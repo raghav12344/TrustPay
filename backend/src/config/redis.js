@@ -137,6 +137,21 @@ const deleteCache = async (key) => {
     }
 };
 
+/**
+ * Lightweight keep-alive ping for Redis (or fallback memory store).
+ */
+const pingRedis = async () => {
+    try {
+        if (isRedisReady && redisClient) {
+            await redisClient.ping();
+            return "connected";
+        }
+        return "in-memory-fallback";
+    } catch {
+        return "in-memory-fallback";
+    }
+};
+
 module.exports = {
     REDIS_URL,
     initRedis,
@@ -144,5 +159,7 @@ module.exports = {
     getCache,
     setCache,
     deleteCache,
+    pingRedis,
     fallbackSlidingWindows,
 };
+
