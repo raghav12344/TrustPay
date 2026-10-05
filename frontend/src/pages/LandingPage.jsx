@@ -5,12 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import {
   ShieldCheck,
-  ShieldAlert,
   Cpu,
-  Database,
-  Server,
-  Smartphone,
-  Users,
   GraduationCap,
   ArrowRight,
   Sparkles,
@@ -19,9 +14,6 @@ import {
   Menu,
   X,
   Zap,
-  Activity,
-  CheckCircle2,
-  AlertTriangle,
 } from 'lucide-react';
 
 export const LandingPage = () => {
@@ -35,6 +27,16 @@ export const LandingPage = () => {
 
   // Neural Particle Canvas speed multiplier
   const [speedMultiplier, setSpeedMultiplier] = useState(1.0);
+  const speedRef = useRef(speedMultiplier);
+  const themeRef = useRef(theme);
+
+  useEffect(() => {
+    speedRef.current = speedMultiplier;
+  }, [speedMultiplier]);
+
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   // Threat Playground state
   const [amount, setAmount] = useState(4.5);
@@ -67,15 +69,19 @@ export const LandingPage = () => {
     checkHealth();
   }, []);
 
-  // 60FPS Interactive Neural Particle Constellation Canvas
+  // 60FPS Interactive Neural Particle Constellation Canvas (Hardware-Accelerated for Chrome)
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let animId;
-    let width, height;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    let animId = null;
+    let isRunning = true;
+    let width = (canvas.width = window.innerWidth || 1280);
+    let height = (canvas.height = window.innerHeight || 800);
 
     const mouse = {
       x: null,
@@ -94,96 +100,66 @@ export const LandingPage = () => {
     };
 
     const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      width = canvas.width = window.innerWidth || 1280;
+      height = canvas.height = window.innerHeight || 800;
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseout', handleMouseOut);
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mouseout', handleMouseOut, { passive: true });
+    window.addEventListener('resize', handleResize, { passive: true });
 
-    const colors =
-      theme === 'dark'
-        ? [
-            'rgba(59, 130, 246, ', // Blue
-            'rgba(168, 85, 247, ', // Purple
-            'rgba(6, 182, 212, ', // Cyan
-            'rgba(16, 185, 129, ', // Emerald
-          ]
-        : [
-            'rgba(37, 99, 235, ',
-            'rgba(126, 34, 206, ',
-            'rgba(14, 116, 144, ',
-            'rgba(5, 150, 105, ',
-          ];
+    const darkColors = [
+      'rgba(59, 130, 246, ', // Blue
+      'rgba(168, 85, 247, ', // Purple
+      'rgba(6, 182, 212, ',  // Cyan
+      'rgba(16, 185, 129, ', // Emerald
+    ];
+    const lightColors = [
+      'rgba(37, 99, 235, ',
+      'rgba(126, 34, 206, ',
+      'rgba(14, 116, 144, ',
+      'rgba(5, 150, 105, ',
+    ];
 
+    const PARTICLE_COUNT = 75;
     const particles = [];
-    const PARTICLE_COUNT = 90;
-
-    class Particle {
-      constructor() {
-        this.x = Math.random() * width;
-        this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.85;
-        this.vy = (Math.random() - 0.5) * 0.85;
-        this.radius = Math.random() * 2.2 + 1;
-        this.colorBase = colors[Math.floor(Math.random() * colors.length)];
-        this.alpha = Math.random() * 0.6 + 0.3;
-      }
-
-      update() {
-        this.x += this.vx * speedMultiplier;
-        this.y += this.vy * speedMultiplier;
-
-        if (this.x < 0) this.x = width;
-        if (this.x > width) this.x = 0;
-        if (this.y < 0) this.y = height;
-        if (this.y > height) this.y = 0;
-
-        // Mouse Magnetism
-        if (mouse.x !== null && mouse.y !== null) {
-          const dx = mouse.x - this.x;
-          const dy = mouse.y - this.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouse.radius) {
-            const force = (mouse.radius - dist) / mouse.radius;
-            this.x += (dx / dist) * force * 1.5;
-            this.y += (dy / dist) * force * 1.5;
-          }
-        }
-      }
-
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.colorBase + this.alpha + ')';
-        ctx.shadowColor = this.colorBase + '0.8)';
-        ctx.shadowBlur = 8;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-    }
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push(new Particle());
+      const colorIdx = i % 4;
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.9,
+        vy: (Math.random() - 0.5) * 0.9,
+        radius: Math.random() * 2.0 + 1.1,
+        colorIdx,
+        alpha: Math.random() * 0.55 + 0.35,
+      });
     }
 
     const animate = () => {
+      if (!isRunning) return;
+
       ctx.clearRect(0, 0, width, height);
+      const isDark = themeRef.current === 'dark';
+      const currentSpeed = speedRef.current;
+      const palette = isDark ? darkColors : lightColors;
 
       // Connect nearby particles
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p1 = particles[i];
+        for (let j = i + 1; j < PARTICLE_COUNT; j++) {
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const distSq = dx * dx + dy * dy;
 
-          if (dist < 125) {
-            const alpha = (1 - dist / 125) * (theme === 'dark' ? 0.22 : 0.15);
+          if (distSq < 15625) {
+            const dist = Math.sqrt(distSq);
+            const alpha = (1 - dist / 125) * (isDark ? 0.22 : 0.15);
             ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
             ctx.strokeStyle = `rgba(96, 165, 250, ${alpha})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
@@ -193,15 +169,18 @@ export const LandingPage = () => {
 
       // Connect to mouse
       if (mouse.x !== null && mouse.y !== null) {
-        for (let i = 0; i < particles.length; i++) {
-          const dx = mouse.x - particles[i].x;
-          const dy = mouse.y - particles[i].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < mouse.radius) {
-            const alpha = (1 - dist / mouse.radius) * (theme === 'dark' ? 0.45 : 0.25);
+        const radiusSq = mouse.radius * mouse.radius;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const p = particles[i];
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < radiusSq) {
+            const dist = Math.sqrt(distSq);
+            const alpha = (1 - dist / mouse.radius) * (isDark ? 0.45 : 0.25);
             ctx.beginPath();
             ctx.moveTo(mouse.x, mouse.y);
-            ctx.lineTo(particles[i].x, particles[i].y);
+            ctx.lineTo(p.x, p.y);
             ctx.strokeStyle = `rgba(168, 85, 247, ${alpha})`;
             ctx.lineWidth = 1.2;
             ctx.stroke();
@@ -209,23 +188,57 @@ export const LandingPage = () => {
         }
       }
 
-      particles.forEach((p) => {
-        p.update();
-        p.draw();
-      });
+      // Update & draw particles (using dual-circle glow instead of expensive ctx.shadowBlur)
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p = particles[i];
+        p.x += p.vx * currentSpeed;
+        p.y += p.vy * currentSpeed;
 
-      animId = requestAnimationFrame(animate);
+        if (p.x < 0) p.x = width;
+        else if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        else if (p.y > height) p.y = 0;
+
+        if (mouse.x !== null && mouse.y !== null) {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 0.1 && dist < mouse.radius) {
+            const force = (mouse.radius - dist) / mouse.radius;
+            p.x += (dx / dist) * force * 1.4;
+            p.y += (dy / dist) * force * 1.4;
+          }
+        }
+
+        const colorBase = palette[p.colorIdx];
+        // Outer soft halo
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius * 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = colorBase + (p.alpha * 0.22) + ')';
+        ctx.fill();
+
+        // Inner crisp core
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = colorBase + p.alpha + ')';
+        ctx.fill();
+      }
+
+      animId = window.requestAnimationFrame(animate);
     };
 
-    animate();
+    animId = window.requestAnimationFrame(animate);
 
     return () => {
-      cancelAnimationFrame(animId);
+      isRunning = false;
+      if (animId !== null) {
+        window.cancelAnimationFrame(animId);
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseout', handleMouseOut);
       window.removeEventListener('resize', handleResize);
     };
-  }, [speedMultiplier, theme]);
+  }, []);
 
   const handleLaunchApp = () => {
     if (isAuthenticated) {
@@ -389,10 +402,12 @@ export const LandingPage = () => {
           height: '100%',
           pointerEvents: 'none',
           zIndex: 0,
+          transform: 'translateZ(0)',
+          willChange: 'transform',
         }}
       />
 
-      {/* Fluid Aurora Glow Mesh */}
+      {/* Fluid Aurora Glow Mesh (GPU Radial Gradients — Zero Chrome Blur Lag) */}
       <div
         style={{
           position: 'fixed',
@@ -400,31 +415,30 @@ export const LandingPage = () => {
           pointerEvents: 'none',
           overflow: 'hidden',
           zIndex: 0,
-          opacity: theme === 'dark' ? 0.35 : 0.15,
+          opacity: theme === 'dark' ? 0.55 : 0.25,
+          transform: 'translateZ(0)',
         }}
       >
         <div
           style={{
             position: 'absolute',
-            top: '-15%',
-            left: '25%',
-            width: '700px',
-            height: '700px',
-            backgroundColor: 'rgba(37, 99, 235, 0.3)',
+            top: '-20%',
+            left: '15%',
+            width: '900px',
+            height: '900px',
+            background: 'radial-gradient(circle, rgba(37, 99, 235, 0.28) 0%, rgba(37, 99, 235, 0) 70%)',
             borderRadius: '50%',
-            filter: 'blur(160px)',
           }}
         />
         <div
           style={{
             position: 'absolute',
-            top: '35%',
-            right: '-10%',
-            width: '650px',
-            height: '650px',
-            backgroundColor: 'rgba(124, 58, 237, 0.25)',
+            top: '25%',
+            right: '-15%',
+            width: '850px',
+            height: '850px',
+            background: 'radial-gradient(circle, rgba(124, 58, 237, 0.24) 0%, rgba(124, 58, 237, 0) 70%)',
             borderRadius: '50%',
-            filter: 'blur(150px)',
           }}
         />
       </div>
