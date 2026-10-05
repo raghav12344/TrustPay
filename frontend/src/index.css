@@ -513,6 +513,63 @@ code {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
+/* PhonePe-Style Payment Processing & Completion Animations */
+@keyframes phonepeRipple {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
+.phonepe-ripple-1 {
+  animation: phonepeRipple 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.phonepe-ripple-2 {
+  animation: phonepeRipple 2s cubic-bezier(0.16, 1, 0.3, 1) 0.7s infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes phonepeCheckPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.phonepe-check-pop {
+  animation: phonepeCheckPop 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes phonepeStrokeDraw {
+  0% {
+    stroke-dashoffset: 60;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.phonepe-stroke-draw {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: phonepeStrokeDraw 450ms ease-out 120ms forwards;
+}
+
 /* Badge Info (Used for real-time Sentinel AI verification state) */
 .badge-info {
   background-color: var(--primary-light);
