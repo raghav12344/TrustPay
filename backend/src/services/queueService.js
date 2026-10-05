@@ -110,19 +110,25 @@ const publishFraudEvaluation = async (payload) => {
 };
 
 /**
- * Lightweight keep-alive check for RabbitMQ connection and queue.
+ * Active keep-alive check for RabbitMQ connection and queue:
+ * reconnects if the channel dropped and verifies `fraud_evaluation_queue`.
  */
 const pingRabbitMQ = async () => {
     try {
+        if (!channel && !RABBITMQ_URL.includes("localhost")) {
+            await initRabbitMQ();
+        }
         if (!channel) {
             return false;
         }
         await channel.checkQueue(FRAUD_EVALUATION_QUEUE);
         return true;
     } catch {
+        channel = null;
         return false;
     }
 };
+
 
 module.exports = {
     FRAUD_EVALUATION_QUEUE,

@@ -138,12 +138,19 @@ const deleteCache = async (key) => {
 };
 
 /**
- * Lightweight keep-alive ping for Redis (or fallback memory store).
+ * Active keep-alive heartbeat for Redis: performs a real SETEX + GET
+ * write/read cycle (so cloud Redis providers register active data commands)
+ * and automatically reconnects if the client dropped.
  */
 const pingRedis = async () => {
     try {
+        if ((!isRedisReady || !redisClient) && !REDIS_URL.includes("localhost")) {
+            await initRedis();
+        }
         if (isRedisReady && redisClient) {
-            await redisClient.ping();
+            const ts = String(Date.now());
+            await redisClient.setEx("keepalive:heartbeat", 900, ts);
+            await redisClient.get("keepalive:heartbeat");
             return "connected";
         }
         return "in-memory-fallback";
@@ -151,6 +158,7 @@ const pingRedis = async () => {
         return "in-memory-fallback";
     }
 };
+
 
 module.exports = {
     REDIS_URL,
