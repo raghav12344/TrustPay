@@ -68,28 +68,28 @@ flowchart TB
         Views["Analytical Views\n(Monitoring, KPI Summaries)"]
     end
 
-    UI_Cust -->|REST JSON + Bearer JWT| Auth_GW
-    UI_Cust -->|POST /api/transactions| RL_MW
-    RL_MW -->|Allowed| Tx_GW
-    UI_Admin -->|Audit, Approve, Reject, Deposit| Admin_GW
+    UI_Cust -->|"REST JSON + Bearer JWT"| Auth_GW
+    UI_Cust -->|"POST /api/transactions"| RL_MW
+    RL_MW -->|"Allowed"| Tx_GW
+    UI_Admin -->|"Audit, Approve, Reject, Deposit"| Admin_GW
 
-    RL_MW <-->|ZREMRANGEBYSCORE / ZCARD / ZADD| Redis_RL
-    Auth_GW <-->|GET / SETEX / DEL| Redis_Cache
-    Tx_GW -->|Invalidate Cache| Redis_Cache
+    RL_MW <-->|"ZREMRANGEBYSCORE / ZCARD / ZADD"| Redis_RL
+    Auth_GW <-->|"GET / SETEX / DEL"| Redis_Cache
+    Tx_GW -->|"Invalidate Cache"| Redis_Cache
 
-    Tx_GW -->|1. INSERT status='PENDING'| Tables
-    Tx_GW -->|2. Publish Persistent Job| RMQ_Queue
-    Tx_GW -.->|3. Immediate 202 Accepted| UI_Cust
+    Tx_GW -->|"1. INSERT status='PENDING'"| Tables
+    Tx_GW -->|"2. Publish Persistent Job"| RMQ_Queue
+    Tx_GW -.->|"3. Immediate 202 Accepted"| UI_Cust
 
-    RMQ_Queue -->|4. Consume (aio-pika)| Feat_Eng
+    RMQ_Queue -->|"4. Consume (aio-pika)"| Feat_Eng
     Feat_Eng --> ML_Model
     Feat_Eng --> GenAI
     ML_Model --> Decision
     GenAI --> Decision
     Decision --> Settler
-    Settler -->|5. INSERT Prediction/Alert & Settle Balance| Tables
+    Settler -->|"5. INSERT Prediction/Alert & Settle Balance"| Tables
 
-    Admin_GW -->|CALL Approve/RejectTransaction| SP
+    Admin_GW -->|"CALL Approve/RejectTransaction"| SP
     SP --> Tables
     Tables -.-> Triggers
     Tables -.-> Views
