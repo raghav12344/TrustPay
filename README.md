@@ -2,6 +2,7 @@
 ## AI-Powered Fraud Detection & Real-Time Transaction Monitoring System
 
 [![TrustPay Enterprise CI/CD Pipeline](https://github.com/raghav12344/TrustPay/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/raghav12344/TrustPay/actions/workflows/ci-cd.yml)
+[![TrustPay 6-Service Keep-Alive Heartbeat](https://github.com/raghav12344/TrustPay/actions/workflows/keep-alive.yml/badge.svg)](https://github.com/raghav12344/TrustPay/actions/workflows/keep-alive.yml)
 
 ---
 
@@ -977,15 +978,16 @@ stateDiagram-v2
 | **Redis Endpoint Caching** | Repeated `GET /api/accounts/me` (30s TTL) & `GET /api/auth/profile` (300s TTL) | `X-Cache: MISS` on 1st call, `X-Cache: HIT` (<2ms) on subsequent calls | **PASSED** |
 | **6-Container Docker Compose** | Validated `docker-compose.yml` & Dockerfiles (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) | Full multi-container orchestration with healthchecks & `.env` support | **PASSED** |
 | **GitHub Actions CI/CD Pipeline** | `.github/workflows/ci-cd.yml` (`frontend-ci`, `backend-ci`, `ml-service-ci`, `docker-compose-ci`, `cd-deploy`) | Automated 5-job CI verification & deployment gate on every push/PR | **PASSED** |
+| **6-Service Keep-Alive Daemon** | `.github/workflows/keep-alive.yml` + 10-min `runOmnichannelKeepAlive()` + 4-min SQL heartbeat | Prevents Aiven MySQL power-off, Render cold-starts, and Redis/RabbitMQ idle drops | **PASSED** |
 | **Database Triggers** | Tested via live SQL insert & update harness | Non-positive amounts blocked (`SQLSTATE 45000`), timestamps assigned | **PASSED** |
 | **Database Stored Procedures** | Row-level locking & balance settlement | Double-review prevented, balance updated atomically | **PASSED** |
 | **Fail-Safe ML Fallback** | Unreachable ML / Broker service simulation | Graceful fallback to synchronous HTTP / `PENDING_ERROR` hold, funds preserved | **PASSED** |
 
 ---
 
-## 7. Cloud Production Deployment, CI/CD Pipeline & Multi-Container Dockerization
+## 7. Cloud Production Deployment, CI/CD Pipeline, Keep-Alive & Multi-Container Dockerization
 
-TrustPay is deployed across a 6-service cloud topology with automated **GitHub Actions CI/CD** and single-command local/production multi-container orchestration via **Docker Compose**:
+TrustPay is deployed across a 6-service cloud topology with automated **GitHub Actions CI/CD**, a **3-Layer Omnichannel Keep-Alive Daemon**, and single-command local/production multi-container orchestration via **Docker Compose**:
 
 ### 7.1 Live 6-Service Cloud Production Topology
 - **1. Frontend SPA (`frontend/`)**:
@@ -1030,13 +1032,39 @@ flowchart LR
 | **`docker-compose-ci`** | `ubuntu-latest` (Docker Compose) | Template `.env` preparation -> `docker compose config --quiet` | Validates 6-container `docker-compose.yml` syntax, ports, healthchecks, and volume bindings |
 | **`cd-deploy`** | `ubuntu-latest` (`needs: [all 4 CI jobs]`) | Triggers Render (`backend`, `ml-service`) & Vercel (`frontend`) deploy hooks on `main` | Prevents broken builds from reaching production |
 
-### 7.3 Multi-Container Dockerization & Orchestration (`docker-compose.yml`)
+### 7.3 6-Service Omnichannel Keep-Alive & Self-Healing Architecture (`.github/workflows/keep-alive.yml`)
+To prevent free-tier cloud infrastructure from spinning down (Render's 15-minute HTTP idle timeout, Aiven Cloud MySQL's database inactivity power-off, and Redis/RabbitMQ idle socket termination), TrustPay implements a **3-Layer Omnichannel Keep-Alive Chain**:
+
+```mermaid
+flowchart LR
+    GH["Layer 3: GitHub Actions Cron\n(.github/workflows/keep-alive.yml • Every 14m)"] -->|"HTTP GET /api/health\n& /api/db-test"| BE["Render Backend Gateway\n(backend/src/server.js)"]
+    BE -->|"Layer 2: Self-Ping Loop\n(Every 10m via public URL)"| BE
+    BE -->|"1. SELECT 1\n(Every 4m & on /api/health)"| DB[("Aiven MySQL 8\n(enableKeepAlive: true)")]
+    BE -->|"2. SETEX + GET Heartbeat\n(pingRedis in redis.js)"| RD[("Render Redis 7\n(allkeys-lru)")]
+    BE -->|"3. AMQP checkQueue\n(pingRabbitMQ in queueService.js)"| RMQ[["CloudAMQP RabbitMQ\n(fraud_evaluation_queue)"]]
+    BE -->|"4. HTTP GET / & /health\n(Every 10m)"| ML["Render FastAPI ML Worker\n(ml-service/app/main.py)"]
+    ML -->|"5. SELECT 1\n(on GET /health)"| DB
+```
+
+1. **Layer 1 — 4-Minute SQL Heartbeat & TCP Keep-Alive (`backend/src/config/database.js`)**:
+   - Configures the `mysql2` connection pool with `enableKeepAlive: true` and `keepAliveInitialDelay: 10000`.
+   - Executes a background `SELECT 1` query every **4 minutes** so Aiven Cloud always registers active SQL traffic and never powers off the MySQL server.
+2. **Layer 2 — 10-Minute Omnichannel Self-Ping & Auto-Reconnect (`backend/src/server.js`)**:
+   - Every **10 minutes** (inside Render's 15-minute idle cutoff), `runOmnichannelKeepAlive()` executes in parallel:
+     - **Aiven MySQL**: `db.query("SELECT 1")`
+     - **Render Redis (`pingRedis()`)**: Writes and reads a TTL key (`SETEX keepalive:heartbeat 900 <ts>` + `GET`) so cloud Redis registers active read/write commands and auto-reconnects if dropped.
+     - **CloudAMQP RabbitMQ (`pingRabbitMQ()`)**: Executes AMQP `channel.checkQueue('fraud_evaluation_queue')` and auto-reconnects if the channel closed.
+     - **FastAPI ML Service & Backend Gateway**: Sends external HTTP `GET` requests to `ML_SERVICE_URL/` and `PUBLIC_BACKEND_URL/api/health` to reset Render's load-balancer idle timers.
+3. **Layer 3 — 14-Minute Scheduled GitHub Actions Cron (`.github/workflows/keep-alive.yml`)**:
+   - Runs every 14 minutes (`*/14 * * * *`) on GitHub's cloud runner to ping `/api/health`, `/api/db-test`, `ml-service/`, and `ml-service/health` externally, waking up all 6 services even after platform maintenance restarts.
+
+### 7.4 Multi-Container Dockerization & Orchestration (`docker-compose.yml`)
 The entire 6-service enterprise stack is containerized and orchestrated via the root `docker-compose.yml` file with automated healthchecks (`service_healthy`), persistent volumes, and `.env` variable injection:
 
 | Container Service | Image / Dockerfile | Exposed Ports | Role & Healthcheck Strategy |
 | :--- | :--- | :--- | :--- |
 | **`frontend`** | `./frontend/Dockerfile` (`node:20-alpine`) | `5173:5173` | React 19 + Vite UI server (`--host 0.0.0.0`); depends on `backend` |
-| **`backend`** | `./backend/Dockerfile` (`node:20-alpine`) | `5000:5000` | Express 5 API Gateway, RabbitMQ producer, Redis rate limiter & cache; waits for healthy `db`, `rabbitmq`, and `redis` |
+| **`backend`** | `./backend/Dockerfile` (`node:22-alpine`) | `5000:5000` | Express 5 API Gateway, RabbitMQ producer, Redis rate limiter & cache; waits for healthy `db`, `rabbitmq`, and `redis` |
 | **`ml-service`** | `./ml-service/Dockerfile` (`python:3.11-slim`) | `8000:8000` | FastAPI inference server + `aio-pika` background consumer worker; waits for healthy `db` and `rabbitmq` |
 | **`db`** | `mysql:8.0` | `3306:3306` | MySQL 8 relational database; auto-initializes `/docker-entrypoint-initdb.d/01-schema.sql`; `mysqladmin ping` healthcheck |
 | **`rabbitmq`** | `rabbitmq:3-management-alpine` | `5672:5672`, `15672:15672` | AMQP 0-9-1 broker (`5672`) + Management UI (`15672`) hosting `fraud_evaluation_queue`; `rabbitmq-diagnostics -q ping` healthcheck |
@@ -1055,7 +1083,7 @@ docker compose ps
 docker compose logs -f backend ml-service
 ```
 
-### 7.4 Single Page Application (SPA) Deep-Linking Configuration
+### 7.5 Single Page Application (SPA) Deep-Linking Configuration
 To ensure client-side routing works seamlessly across static hosts (Netlify, Vercel, Cloudflare Pages, AWS S3/CloudFront) and prevents HTTP 404 errors when users refresh deep URLs like `/admin/transactions` or `/dashboard`, multi-platform redirect configurations are implemented:
 
 1. **Netlify & Static Hosting (`frontend/public/_redirects`)**:
@@ -1086,7 +1114,7 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 1. **End-to-End 6-Tier Enterprise Decoupling**: Implemented a distributed 6-service architecture separating the React UI, Express API Gateway, RabbitMQ AMQP Broker, Redis Cache & Rate Limiter, FastAPI Sentinel ML Worker, and MySQL 8 Relational Database.
 2. **Asynchronous Event-Driven ML Pipeline (RabbitMQ)**: Decoupled the ~1.43s ML + GenAI fraud evaluation from the Node.js event loop using a durable `fraud_evaluation_queue` (`amqplib` producer -> `aio-pika` consumer), returning immediate `202 Accepted` responses (`< 15 ms`) and settling balances asynchronously in MySQL.
 3. **Redis Sliding-Window Rate Limiting & Low-Latency Caching**: Protected `POST /api/transactions` against automated bot floods using Redis sorted-set (`ZSET`) sliding-window rate limiting (max 5 requests per 10s per user/IP -> `HTTP 429`), and cached `GET /api/accounts/me` (30s TTL) and `GET /api/auth/profile` (300s TTL) with automatic write-invalidation.
-4. **Full Multi-Container Docker Orchestration & GitHub Actions CI/CD**: Packaged all 6 tiers (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) via `docker-compose.yml` and automated 5-job CI/CD verification via `.github/workflows/ci-cd.yml`.
+4. **Full Multi-Container Docker Orchestration, GitHub Actions CI/CD & Omnichannel Keep-Alive**: Packaged all 6 tiers via `docker-compose.yml`, automated 5-job CI/CD verification via `.github/workflows/ci-cd.yml`, and engineered a 3-layer keep-alive heartbeat (`.github/workflows/keep-alive.yml` + self-ping daemon) keeping all 6 cloud services continuously warm.
 5. **Mathematical Relational Integrity & ACID Guarantees**: Schema normalized to Boyce-Codd Normal Form (BCNF) across 8 entities with active check triggers, row-level locking (`SELECT ... FOR UPDATE`), and idempotent worker settlement preventing double-spending.
 6. **Hybrid AI Surveillance & Fail-Safe Resilience**: 14-feature behavioral engineering pipeline feeding a calibrated LightGBM model (`99.90%` accuracy) supplemented by contextual Groq Llama 3.3 GenAI explanations, with automatic fallback if the broker or AI service is unreachable.
 
@@ -1095,6 +1123,7 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 - **Rishabh Srivastava** (Registration Number: `20243236`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Rishabh Singh** (Registration Number: `20243235`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Prince Keshari** (Registration Number: `20243218`) — B.Tech (3rd Year) • Computer Science & Engineering
+
 
 
 
