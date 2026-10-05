@@ -393,7 +393,6 @@ const getProfile = async (req, res) => {
              LIMIT 1`,
             [userId]
         );
-
         if (users.length === 0) {
             return res.status(404).json({
                 success: false,
