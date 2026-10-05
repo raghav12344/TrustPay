@@ -57,8 +57,17 @@ app.get("/api/db-test", async (req, res) => {
 // Server
 // ==========================================
 
+const { initRabbitMQ } = require("./services/queueService");
+const { initRedis } = require("./config/redis");
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`TrustPay API running on port ${PORT}`);
+    initRabbitMQ().catch((err) => {
+        console.warn("[RABBITMQ] Initial connect warning:", err.message);
+    });
+    initRedis().catch((err) => {
+        console.warn("[REDIS] Initial connect warning:", err.message);
+    });
 });

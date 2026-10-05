@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class TransactionRequest(BaseModel):
+    transaction_id: int | None = None
+
     user_id: int
 
     account_id: int

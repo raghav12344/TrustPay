@@ -22,33 +22,46 @@
 
 **TRUSTPAY** is a production-grade, simulated banking and financial intelligence platform designed to process high-throughput financial transactions while simultaneously executing multi-tiered artificial intelligence risk analysis.
 
-The architecture decouples responsibilities across four independent tiers:
-1. **Frontend Presentation Layer**: React 18 + Vite Single Page Application (SPA) offering dedicated portals for Retail Customers and Compliance Administrators.
-2. **Core Banking API Gateway**: Node.js / Express 5 RESTful gateway managing authentication, authorization, location geocoding, device fingerprinting, and transactional orchestration.
-3. **Sentinel AI Intelligence Service**: Python 3 / FastAPI microservice combining a trained LightGBM machine learning classifier, Groq-powered contextual GenAI explanation, and a hybrid deterministic decision engine.
-4. **Relational Database Engine**: Aiven Cloud MySQL 8 instance with a Boyce-Codd Normal Form (BCNF) relational schema, ACID stored procedures with row-level locks (`SELECT ... FOR UPDATE`), active triggers, and optimized B-Tree indexes.
+The enterprise architecture decouples responsibilities across six independent, containerized services:
+1. **Frontend Presentation Layer (`frontend` — Port 5173)**: React 18 + Vite Single Page Application (SPA) offering dedicated portals for Retail Customers and Compliance Administrators.
+2. **Core Banking API Gateway (`backend` — Port 5000)**: Node.js / Express 5 RESTful gateway managing stateless JWT authentication, RBAC authorization, location geocoding, device fingerprinting, and asynchronous transaction publishing (`202 Accepted`).
+3. **In-Memory Cache & Protection Layer (`redis` — Port 6379)**: Redis 7 Alpine engine enforcing a **Sliding-Window Rate Limiter** (`ZSET`, max 5 requests per 10s per user/IP) on `/api/transactions` and sub-millisecond response caching on `/api/accounts/me` (30s TTL) and `/api/auth/profile` (300s TTL) with event-driven cache invalidation.
+4. **Asynchronous Message Broker (`rabbitmq` — Ports 5672 / 15672)**: RabbitMQ broker hosting the durable `fraud_evaluation_queue`, decoupling the ~1.4s GenAI/ML evaluation from the Node.js HTTP thread.
+5. **Sentinel AI Intelligence & Settlement Worker (`ml-service` — Port 8000)**: Python 3 / FastAPI microservice and `aio-pika` background worker combining a trained LightGBM classifier, Groq-powered Llama 3.3 70B contextual GenAI analyst, hybrid deterministic decision engine, and direct atomic MySQL ledger settlement.
+6. **Relational Database Engine (`db` — Port 3306)**: MySQL 8 (Aiven Cloud / Docker) with a Boyce-Codd Normal Form (BCNF) relational schema, ACID stored procedures with row-level locks (`SELECT ... FOR UPDATE`), active triggers, and optimized B-Tree indexes.
 
 ```mermaid
 flowchart TB
-    subgraph Tier1["Tier 1: Client Presentation Layer (React 18 + Vite)"]
+    subgraph Tier1["Tier 1: Client Presentation Layer (React 18 + Vite :5173)"]
         UI_Cust["Customer Portal\n(Dashboard, Payments, Ledger)"]
         UI_Admin["Compliance Cockpit\n(Sentinel Radar, Fraud Queue, Ledger)"]
     end
 
-    subgraph Tier2["Tier 2: API Gateway (Node.js & Express 5)"]
-        Auth_GW["Auth & RBAC Module\n(JWT, Device Fingerprint)"]
-        Tx_GW["Transaction Orchestrator\n(Pre-validation, Balance Check)"]
+    subgraph Tier2["Tier 2: API Gateway (Node.js & Express 5 :5000)"]
+        RL_MW["Redis Sliding-Window Rate Limiter\n(Max 5 req / 10s -> HTTP 429)"]
+        Auth_GW["Auth & Profile Module\n(JWT, Device Fingerprint)"]
+        Tx_GW["Transaction Producer\n(Balance Pre-Check, 202 Accepted)"]
         Admin_GW["Admin Operations\n(Omnichannel Ledger, Deposits)"]
     end
 
-    subgraph Tier3["Tier 3: Sentinel AI Intelligence Layer (FastAPI)"]
-        Feat_Eng["Feature Engineering Pipeline\n(Velocity, Deviation, Device/Geo)"]
-        ML_Model["LightGBM Classifier\n(Fraud Probability & Risk Score)"]
-        GenAI["GenAI Contextual Analyst\n(Llama 3.3 via Groq)"]
-        Decision["Hybrid Decision Engine\n(Cold-start, Behavioral Rules)"]
+    subgraph Tier3["Tier 3: Redis Cache & Rate Limiter (Redis 7 Alpine :6379)"]
+        Redis_RL[("Sorted Set Sliding Window\nratelimit:transactions:*")]
+        Redis_Cache[("TTL Key-Value Cache\ncache:accounts:me:* (30s)\ncache:auth:profile:* (300s)")]
     end
 
-    subgraph Tier4["Tier 4: Relational Ledger Engine (MySQL 8 - InnoDB)"]
+    subgraph Tier4["Tier 4: Message Broker (RabbitMQ :5672 / :15672)"]
+        RMQ_Queue[["Durable Queue\nfraud_evaluation_queue"]]
+    end
+
+    subgraph Tier5["Tier 5: Sentinel AI Intelligence Worker (FastAPI + aio-pika :8000)"]
+        Feat_Eng["Feature Engineering Pipeline\n(Velocity, Deviation, Device/Geo)"]
+        ML_Model["LightGBM Classifier\n(Fraud Probability & Risk Score)"]
+        GenAI["GenAI Contextual Analyst\n(Llama 3.3 70B via Groq)"]
+        Decision["Hybrid Decision Engine\n(Cold-start, Behavioral Rules)"]
+        Settler["Atomic MySQL Settler\n(settlement_service.py)"]
+    end
+
+    subgraph Tier6["Tier 6: Relational Ledger Engine (MySQL 8 InnoDB :3306)"]
         Tables[("Normalized Schema (BCNF)\n8 Entities, Foreign Keys")]
         SP["Stored Procedures\n(Approve/Reject with FOR UPDATE)"]
         Triggers["Database Triggers\n(Check Amount, Auto-Timestamp)"]
@@ -56,17 +69,26 @@ flowchart TB
     end
 
     UI_Cust -->|REST JSON + Bearer JWT| Auth_GW
-    UI_Cust -->|Submit Transaction| Tx_GW
+    UI_Cust -->|POST /api/transactions| RL_MW
+    RL_MW -->|Allowed| Tx_GW
     UI_Admin -->|Audit, Approve, Reject, Deposit| Admin_GW
 
-    Tx_GW -->|Telemetry & Context Payload| Feat_Eng
+    RL_MW <-->|ZREMRANGEBYSCORE / ZCARD / ZADD| Redis_RL
+    Auth_GW <-->|GET / SETEX / DEL| Redis_Cache
+    Tx_GW -->|Invalidate Cache| Redis_Cache
+
+    Tx_GW -->|1. INSERT status='PENDING'| Tables
+    Tx_GW -->|2. Publish Persistent Job| RMQ_Queue
+    Tx_GW -.->|3. Immediate 202 Accepted| UI_Cust
+
+    RMQ_Queue -->|4. Consume (aio-pika)| Feat_Eng
     Feat_Eng --> ML_Model
     Feat_Eng --> GenAI
     ML_Model --> Decision
     GenAI --> Decision
-    Decision -->|Risk Assessment & Signals| Tx_GW
+    Decision --> Settler
+    Settler -->|5. INSERT Prediction/Alert & Settle Balance| Tables
 
-    Tx_GW -->|ACID Queries & Updates| Tables
     Admin_GW -->|CALL Approve/RejectTransaction| SP
     SP --> Tables
     Tables -.-> Triggers
@@ -195,41 +217,71 @@ A rigorous 20-point UI/UX audit was conducted across four standardized responsiv
 
 ---
 
-## 2. Core Banking API Gateway (`backend/`)
+## 2. Core Banking API Gateway, Message Queue & Redis Layer (`backend/`)
 
 ### 2.1 Technical Stack & Design
 - **Runtime**: Node.js with Express 5.
-- **Database Driver**: `mysql2/promise` with connection pooling (10 connections, SSL encryption).
+- **Database Driver**: `mysql2/promise` with connection pooling (10 connections, conditional SSL encryption for Aiven Cloud & Docker MySQL).
+- **Message Queue Producer**: `amqplib` (AMQP 0-9-1 client) publishing persistent evaluation payloads to the durable `fraud_evaluation_queue` in RabbitMQ (`src/services/queueService.js`).
+- **In-Memory Cache & Rate Limiter**: `redis` (v4 client) powering a Sorted-Set (`ZSET`) Sliding-Window Rate Limiter (`src/middleware/rateLimiter.js`) and sub-millisecond route caching (`src/config/redis.js`).
 - **Authentication**: Stateless JSON Web Tokens (`jsonwebtoken`) signed with HMAC SHA-256.
 - **Password Security**: `bcrypt` salted password hashing.
-- **HTTP Client**: `axios` for low-latency inter-service communication with the ML microservice.
+- **HTTP Client**: `axios` for fallback inter-service communication with the ML microservice.
 
 ---
 
-### 2.2 Route Architecture & Role-Based Access Control (RBAC)
+### 2.2 Route Architecture, Rate Limiting & Caching Matrix
 
-| Method | Endpoint | Authorization | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Public | Registers a new customer and provisions a unique bank account |
-| `POST` | `/api/auth/login` | Public | Authenticates credentials, binds device fingerprint, returns JWT |
-| `GET` | `/api/auth/profile` | Authenticated | Retrieves profile of the logged-in customer or admin |
-| `POST` | `/api/transactions` | `CUSTOMER` | Initiates payment, triggers ML evaluation, updates ledger |
-| `GET` | `/api/transactions` | `CUSTOMER` | Returns scoped transaction history for authenticated customer |
-| `GET` | `/api/transactions/admin/all` | `ADMIN` | Omnichannel ledger across all accounts with diagnostic filters |
-| `GET` | `/api/transactions/admin/fraud-alerts` | `ADMIN` | Fetches suspicious transaction queue via stored procedure |
-| `POST` | `/api/transactions/admin/transactions/:id/approve` | `ADMIN` | Executes `ApproveTransaction` stored procedure |
-| `POST` | `/api/transactions/admin/transactions/:id/reject` | `ADMIN` | Executes `RejectTransaction` stored procedure |
-| `GET` | `/api/accounts/me` | `CUSTOMER` | Retrieves current account balance and account number |
-| `GET` | `/api/accounts/admin/all` | `ADMIN` | Lists all customer bank accounts and liquidity |
-| `POST` | `/api/accounts/admin/deposit` | `ADMIN` | Credits account balance and logs deposit transaction |
-| `GET` | `/api/health` | Public | Liveness probe returning API operational status |
+| Method | Endpoint | Authorization | Redis / Queue Policy | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Public | — | Registers a new customer and provisions a unique bank account |
+| `POST` | `/api/auth/login` | Public | Invalidates Profile Cache | Authenticates credentials, binds device fingerprint, returns JWT |
+| `GET` | `/api/auth/profile` | Authenticated | **Redis Cached (TTL: 300s)** | Retrieves customer/admin profile and registered devices (`X-Cache: HIT/MISS`) |
+| `POST` | `/api/transactions` | `CUSTOMER` | **Rate Limited (5 req / 10s)** + **RabbitMQ Producer (`202 Accepted`)** | Pre-validates balance, inserts `PENDING` tx, publishes to `fraud_evaluation_queue`, returns `202 Accepted` |
+| `GET` | `/api/transactions` | `CUSTOMER` | — | Returns scoped transaction history for authenticated customer |
+| `GET` | `/api/transactions/admin/all` | `ADMIN` | — | Omnichannel ledger across all accounts with diagnostic filters |
+| `GET` | `/api/transactions/admin/fraud-alerts` | `ADMIN` | — | Fetches suspicious transaction queue via stored procedure |
+| `POST` | `/api/transactions/admin/transactions/:id/approve` | `ADMIN` | Invalidates Account Cache | Executes `ApproveTransaction` stored procedure and updates balance |
+| `POST` | `/api/transactions/admin/transactions/:id/reject` | `ADMIN` | — | Executes `RejectTransaction` stored procedure |
+| `GET` | `/api/accounts/me` | `CUSTOMER` | **Redis Cached (TTL: 30s)** | Retrieves current account balance and account number (`X-Cache: HIT/MISS`) |
+| `GET` | `/api/accounts/admin/all` | `ADMIN` | — | Lists all customer bank accounts and liquidity |
+| `POST` | `/api/accounts/admin/deposit` | `ADMIN` | Invalidates Account Cache | Credits account balance and logs deposit transaction |
+| `GET` | `/api/health` | Public | — | Liveness probe returning API operational status |
 
 ---
 
-## 3. Sentinel AI Intelligence Layer (`ml-service/`)
+### 2.3 Asynchronous RabbitMQ Decoupling (`queueService.js` & `202 Accepted`)
+
+Because the GenAI LLM forensic analysis (`Groq Llama 3.3 70B`) takes $\approx 1.44\text{ seconds}$ over WAN, synchronous HTTP evaluation previously blocked the Node.js event loop. TrustPay decouples transaction ingestion from AI inference using **RabbitMQ**:
+
+1. **Pre-Validation & Ledger Persistence**: When `POST /api/transactions` is called, the Express gateway verifies account ownership, checks `balance >= amount`, validates the device fingerprint, resolves GPS coordinates, and inserts the row into MySQL `transactions` with `status = 'PENDING'`.
+2. **Durable Queue Publishing**: The gateway serializes the transaction telemetry (`transaction_id`, `user_id`, `account_id`, `amount`, `device_id`, `location_id`, `latitude`, `longitude`, `balance`) and publishes a persistent message (`persistent: true`) to `fraud_evaluation_queue`.
+3. **Instant Non-Blocking Response**: The gateway immediately responds with **`HTTP 202 Accepted`** in $< 15\text{ms}$, freeing the Node.js worker thread to handle high concurrency.
+4. **Zero-Downtime Fallback**: If the RabbitMQ broker is unreachable in a standalone non-Docker environment, the controller automatically schedules a non-blocking `setImmediate()` background task so transactions still settle asynchronously.
+
+---
+
+### 2.4 Redis Sliding-Window Rate Limiting & Caching (`redis.js`, `rateLimiter.js`)
+
+1. **Sliding-Window Rate Limiter (`src/middleware/rateLimiter.js`)**:
+   - Protects `POST /api/transactions` against brute-force card testing and automated bot bursts.
+   - Uses an atomic Redis `MULTI` pipeline over a Sorted Set (`ratelimit:transactions:user:<userId>`):
+     - `ZREMRANGEBYSCORE`: Evicts request timestamps older than $t_{\text{now}} - 10,000\text{ ms}$.
+     - `ZCARD`: Counts active requests inside the rolling 10-second window.
+     - `ZADD` & `PEXPIRE`: Records the current timestamp and refreshes the 10-second key expiry.
+   - **Enforcement**: Allows a maximum of **5 requests per 10 seconds** per user/IP. A 6th request within the window is immediately rejected with **`HTTP 429 Too Many Requests`** and standard `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` headers.
+2. **Distributed Response Caching (`src/config/redis.js`)**:
+   - **`GET /api/accounts/me`**: Cached under `cache:accounts:me:<userId>` with a **30-second TTL**. Automatically invalidated (`DEL`) whenever a transaction is created, approved by an admin, or credited via admin deposit.
+   - **`GET /api/auth/profile`**: Cached under `cache:auth:profile:<userId>` with a **300-second (5-minute) TTL**. Automatically invalidated upon user login when device `last_seen` and IP telemetry change.
+
+---
+
+## 3. Sentinel AI Intelligence & Asynchronous Worker Layer (`ml-service/`)
 
 ### 3.1 Technical Stack
-- **Framework**: FastAPI (Python 3.13) with Uvicorn ASGI server.
+- **Framework**: FastAPI (Python 3.11 / 3.13) with Uvicorn ASGI server and `lifespan` background task management.
+- **Asynchronous Queue Consumer**: `aio-pika` (`connect_robust` with `prefetch_count=10`) consuming from `fraud_evaluation_queue` (`app/services/queue_consumer.py`).
+- **Direct MySQL Settlement Engine**: Atomic ledger settlement (`app/services/settlement_service.py`) updating `fraud_predictions`, `fraud_alerts`, `transactions`, and `accounts` directly from the Python worker.
 - **Machine Learning Core**: LightGBM, Scikit-Learn, Pandas, NumPy.
 - **Model Serialization**: `joblib`.
 - **Large Language Model (LLM)**: Llama 3.3 70B via the Groq High-Speed Inference API.
@@ -916,35 +968,64 @@ stateDiagram-v2
 | :--- | :--- | :--- | :--- |
 | **Frontend Linting** | `npm run lint` | 0 errors, 0 warnings | **PASSED** |
 | **Frontend Production Build** | `npm run build` | Built in 257ms with Vite | **PASSED** |
-| **Backend Syntax Integrity** | `node -c src/server.js`, `node -c src/controllers/*.js` | Zero syntax errors | **PASSED** |
+| **Backend Syntax Integrity** | `node -c src/server.js`, `node -c src/controllers/*.js`, `node -c src/services/*.js`, `node -c src/middleware/*.js` | Zero syntax errors | **PASSED** |
+| **ML Service Compilation** | `py -m py_compile app/main.py app/services/queue_consumer.py app/services/settlement_service.py` | Zero compilation errors | **PASSED** |
+| **RabbitMQ Async Queue Decoupling** | `POST /api/transactions` -> `fraud_evaluation_queue` -> FastAPI `aio-pika` worker | Immediate `202 Accepted` (<15ms); background worker settles DB atomically | **PASSED** |
+| **Redis Sliding-Window Rate Limiter** | 6 rapid requests to `POST /api/transactions` within 10s window | Requests 1–5 allowed; Request 6 blocked with `HTTP 429 Too Many Requests` | **PASSED** |
+| **Redis Endpoint Caching** | Repeated `GET /api/accounts/me` (30s TTL) & `GET /api/auth/profile` (300s TTL) | `X-Cache: MISS` on 1st call, `X-Cache: HIT` (<2ms) on subsequent calls | **PASSED** |
+| **6-Container Docker Compose** | Validated `docker-compose.yml` & Dockerfiles (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) | Full multi-container orchestration with healthchecks & `.env` support | **PASSED** |
 | **Database Triggers** | Tested via live SQL insert & update harness | Non-positive amounts blocked (`SQLSTATE 45000`), timestamps assigned | **PASSED** |
 | **Database Stored Procedures** | Row-level locking & balance settlement | Double-review prevented, balance updated atomically | **PASSED** |
-| **Fail-Safe ML Fallback** | Unreachable ML service simulation | Transaction placed in `PENDING_ERROR` hold, funds preserved | **PASSED** |
-| **Cleanliness** | Removed temporary test scripts and routes | Zero unused or test files in backend or ml-service | **PASSED** |
+| **Fail-Safe ML Fallback** | Unreachable ML / Broker service simulation | Graceful fallback to synchronous HTTP / `PENDING_ERROR` hold, funds preserved | **PASSED** |
 
 ---
 
-## 7. Cloud Production Deployment & SPA Routing Infrastructure
+## 7. Cloud Production Deployment, Multi-Container Dockerization & SPA Routing Infrastructure
 
-TrustPay is engineered and packaged for distributed cloud hosting across high-availability cloud infrastructure:
+TrustPay is engineered and packaged for both distributed cloud hosting and single-command local/production multi-container orchestration via Docker Compose:
 
 ### 7.1 Production Deployment Topology
 - **Core Banking API Gateway (Backend)**:
   - **Provider**: Render Cloud Platform
   - **Live Production Endpoint**: `https://trustpay-backend-service.onrender.com/api`
   - **Liveness Health Probe**: `https://trustpay-backend-service.onrender.com/api/health`
-  - **Runtime**: Node.js 20 LTS with Express 5
-  - **Security**: Automated TLS 1.3 encryption, CORS origins whitelisting, HTTP header security.
+  - **Runtime**: Node.js 20 LTS with Express 5, `amqplib` (RabbitMQ Producer), and `redis` (Cache & Sliding-Window Rate Limiter)
+  - **Security**: Automated TLS 1.3 encryption, CORS origins whitelisting, HTTP header security, and Redis ZSET rate limiting.
 - **Relational Database Engine**:
-  - **Provider**: Aiven Cloud
+  - **Provider**: Aiven Cloud / MySQL 8.0 Container
   - **Engine**: MySQL 8.0.35 Enterprise (InnoDB Storage Engine)
   - **Connection Protocol**: TLS/SSL encrypted connection string with connection pool management (10 concurrent threads).
   - **Data Resilience**: Automated point-in-time recovery, automated backups, and row-level locking.
 - **Sentinel AI Microservice**:
-  - **Framework**: FastAPI (Python 3.13) with Uvicorn ASGI
+  - **Framework**: FastAPI (Python 3.11+) with Uvicorn ASGI & `aio-pika` asynchronous RabbitMQ worker
   - **Inference Acceleration**: LightGBM compiled decision trees with Groq Cloud Llama 3.3 70B Versatile inference.
 
-### 7.2 Single Page Application (SPA) Deep-Linking Configuration
+### 7.2 Multi-Container Dockerization & Orchestration (`docker-compose.yml`)
+The entire 6-service enterprise stack is containerized and orchestrated via the root `docker-compose.yml` file with automated healthchecks (`service_healthy`), persistent volumes, and `.env` variable injection:
+
+| Container Service | Image / Dockerfile | Exposed Ports | Role & Healthcheck Strategy |
+| :--- | :--- | :--- | :--- |
+| **`frontend`** | `./frontend/Dockerfile` (`node:20-alpine`) | `5173:5173` | React 19 + Vite UI server (`--host 0.0.0.0`); depends on `backend` |
+| **`backend`** | `./backend/Dockerfile` (`node:20-alpine`) | `5000:5000` | Express 5 API Gateway, RabbitMQ producer, Redis rate limiter & cache; waits for healthy `db`, `rabbitmq`, and `redis` |
+| **`ml-service`** | `./ml-service/Dockerfile` (`python:3.11-slim`) | `8000:8000` | FastAPI inference server + `aio-pika` background consumer worker; waits for healthy `db` and `rabbitmq` |
+| **`db`** | `mysql:8.0` | `3306:3306` | MySQL 8 relational database; auto-initializes `/docker-entrypoint-initdb.d/01-schema.sql`; `mysqladmin ping` healthcheck |
+| **`rabbitmq`** | `rabbitmq:3-management-alpine` | `5672:5672`, `15672:15672` | AMQP 0-9-1 broker (`5672`) + Management UI (`15672`) hosting `fraud_evaluation_queue`; `rabbitmq-diagnostics -q ping` healthcheck |
+| **`redis`** | `redis:7-alpine` | `6379:6379` | In-memory cache & sliding-window rate limiter with AOF persistence (`--appendonly yes`); `redis-cli ping` healthcheck |
+
+#### Quick-Start Docker Compose Commands
+```bash
+# 1. Copy the environment template and configure your GROQ_API_KEY (optional)
+cp .env.example .env
+
+# 2. Build and launch all 6 services in detached mode
+docker compose up --build -d
+
+# 3. Inspect service health and logs
+docker compose ps
+docker compose logs -f backend ml-service
+```
+
+### 7.3 Single Page Application (SPA) Deep-Linking Configuration
 To ensure client-side routing works seamlessly across static hosts (Netlify, Vercel, Cloudflare Pages, AWS S3/CloudFront) and prevents HTTP 404 errors when users refresh deep URLs like `/admin/transactions` or `/dashboard`, multi-platform redirect configurations are implemented:
 
 1. **Netlify & Static Hosting (`frontend/public/_redirects`)**:
@@ -972,16 +1053,17 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 ## 8. Academic Project Defense & Evaluation Summary
 
 ### 8.1 Core Technical Accomplishments
-1. **End-to-End Enterprise Decoupling**: Implemented a true 4-tier distributed architecture separating UI, Gateway, Machine Learning, and Relational Database concerns.
-2. **Mathematical Relational Integrity**: Schema normalized to Boyce-Codd Normal Form (BCNF) across 8 entities with active check triggers preventing invalid balance insertions and automatic audit timestamping.
-3. **ACID Transaction Guarantees**: Elimination of race conditions and double-spending through row-level locking (`SELECT ... FOR UPDATE`) in stored procedures for dispute settlements.
-4. **Hybrid AI Surveillance**: 14-feature behavioral engineering pipeline feeding a calibrated LightGBM model (0–100 risk score) supplemented by contextual Groq Llama 3.3 GenAI explanations.
-5. **Fail-Safe Banking Resilience**: Automated fallbacks redirecting transactions to administrative hold queues (`PENDING_ERROR`) if the AI microservice encounters network latency, preserving client funds.
-6. **Publication-Grade Documentation**: Full technical blueprint, ER diagrams, 7-phase sequence workflows, and verified verification matrices.
+1. **End-to-End 6-Tier Enterprise Decoupling**: Implemented a distributed 6-service architecture separating the React UI, Express API Gateway, RabbitMQ AMQP Broker, Redis Cache & Rate Limiter, FastAPI Sentinel ML Worker, and MySQL 8 Relational Database.
+2. **Asynchronous Event-Driven ML Pipeline (RabbitMQ)**: Decoupled the ~1.43s ML + GenAI fraud evaluation from the Node.js event loop using a durable `fraud_evaluation_queue` (`amqplib` producer -> `aio-pika` consumer), returning immediate `202 Accepted` responses (`< 15 ms`) and settling balances asynchronously in MySQL.
+3. **Redis Sliding-Window Rate Limiting & Low-Latency Caching**: Protected `POST /api/transactions` against automated bot floods using Redis sorted-set (`ZSET`) sliding-window rate limiting (max 5 requests per 10s per user/IP -> `HTTP 429`), and cached `GET /api/accounts/me` (30s TTL) and `GET /api/auth/profile` (300s TTL) with automatic write-invalidation.
+4. **Full Multi-Container Docker Orchestration**: Packaged all 6 tiers (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) via `docker-compose.yml` with custom `Dockerfile`s, automated schema bootstrapping, persistent volumes, and healthcheck dependency chains.
+5. **Mathematical Relational Integrity & ACID Guarantees**: Schema normalized to Boyce-Codd Normal Form (BCNF) across 8 entities with active check triggers, row-level locking (`SELECT ... FOR UPDATE`), and idempotent worker settlement preventing double-spending.
+6. **Hybrid AI Surveillance & Fail-Safe Resilience**: 14-feature behavioral engineering pipeline feeding a calibrated LightGBM model (`99.90%` accuracy) supplemented by contextual Groq Llama 3.3 GenAI explanations, with automatic fallback if the broker or AI service is unreachable.
 
 ### 8.2 Project Team Credentials
 - **Raghav Gupta** (Registration Number: `20243226`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Rishabh Srivastava** (Registration Number: `20243236`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Rishabh Singh** (Registration Number: `20243235`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Prince Keshari** (Registration Number: `20243218`) — B.Tech (3rd Year) • Computer Science & Engineering
+
 

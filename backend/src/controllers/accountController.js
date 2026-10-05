@@ -1,13 +1,34 @@
 const db = require("../config/database");
+const {
+    getCache,
+    setCache,
+    deleteCache,
+} = require("../config/redis");
+
+const ACCOUNT_CACHE_TTL_SECONDS = 30;
+const getAccountCacheKey = (userId) => `cache:accounts:me:${userId}`;
 
 // ==========================================================
-// GET MY ACCOUNT - CUSTOMER
+// GET MY ACCOUNT - CUSTOMER (REDIS CACHED, TTL = 30s)
 // ==========================================================
 
 const getMyAccount = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const cacheKey = getAccountCacheKey(userId);
 
+        // 1. Check Redis Cache
+        const cachedAccount = await getCache(cacheKey);
+        if (cachedAccount) {
+            res.setHeader("X-Cache", "HIT");
+            return res.json({
+                success: true,
+                cached: true,
+                account: cachedAccount,
+            });
+        }
+
+        // 2. Cache Miss -> Query MySQL
         const [accounts] = await db.query(
             `SELECT
                 account_id,
@@ -29,16 +50,22 @@ const getMyAccount = async (req, res) => {
         }
 
         const account = accounts[0];
+        const accountPayload = {
+            accountId: account.account_id,
+            accountNumber: account.account_number,
+            accountType: account.account_type,
+            balance: Number(account.balance),
+            createdAt: account.created_at,
+        };
 
+        // 3. Populate Redis Cache with TTL
+        await setCache(cacheKey, accountPayload, ACCOUNT_CACHE_TTL_SECONDS);
+
+        res.setHeader("X-Cache", "MISS");
         res.json({
             success: true,
-            account: {
-                accountId: account.account_id,
-                accountNumber: account.account_number,
-                accountType: account.account_type,
-                balance: Number(account.balance),
-                createdAt: account.created_at,
-            },
+            cached: false,
+            account: accountPayload,
         });
 
     } catch (error) {
@@ -127,7 +154,7 @@ const adminDeposit = async (req, res) => {
 
         // Verify account exists
         const [accounts] = await db.query(
-            `SELECT account_id, balance, account_number
+            `SELECT account_id, user_id, balance, account_number
              FROM accounts
              WHERE account_id = ?`,
             [accountId]
@@ -150,6 +177,9 @@ const adminDeposit = async (req, res) => {
              WHERE account_id = ?`,
             [newBalance, accountId]
         );
+
+        // Invalidate Redis cache for this customer's account
+        await deleteCache(getAccountCacheKey(currentAccount.user_id));
 
         // Record approved DEPOSIT transaction in transactions table
         const [txResult] = await db.query(
@@ -193,4 +223,5 @@ module.exports = {
     getMyAccount,
     getAllAccounts,
     adminDeposit,
+    getAccountCacheKey,
 };

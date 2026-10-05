@@ -125,19 +125,21 @@ export const MakeTransaction = () => {
       const response = await transactionService.createTransaction(payload);
 
       // Analyze response:
-      // Status can be APPROVED or PENDING
-      // Fraud object may have final_decision: { final_risk_level, action, reasons }
+      // Status is PENDING when accepted asynchronously (202 Accepted) or APPROVED/PENDING
       const riskLevel = response.fraud?.final_decision?.final_risk_level || 'LOW';
-      const status = response.status; // 'APPROVED' or 'PENDING'
+      const status = response.status; // 'PENDING' (202 Queued) or 'APPROVED'
+      const isQueued = Boolean(response.queued);
 
-      // Update local account balance immediately
+      // Update local account balance immediately if provided
       if (response.newBalance !== undefined && response.newBalance !== null) {
         setAccount((prev) => (prev ? { ...prev, balance: response.newBalance } : null));
-      } else if (status === 'APPROVED') {
-        // Fallback fetch if not returned directly
-        accountService.getMyAccount().then((res) => {
-          if (res && res.account) setAccount(res.account);
-        }).catch(() => {});
+      } else {
+        // Refresh account balance after async worker processes the queue (~2s)
+        setTimeout(() => {
+          accountService.getMyAccount().then((res) => {
+            if (res && res.account) setAccount(res.account);
+          }).catch(() => {});
+        }, 2000);
       }
 
       setResultModal({
@@ -145,6 +147,7 @@ export const MakeTransaction = () => {
         amount: numAmount,
         merchant: merchant.trim() || transactionType,
         status,
+        queued: isQueued,
         riskLevel,
         newBalance: response.newBalance,
         isMedium: riskLevel === 'MEDIUM',
@@ -153,6 +156,8 @@ export const MakeTransaction = () => {
 
       if (status === 'APPROVED') {
         success('Transaction approved successfully!');
+      } else if (isQueued) {
+        info('Transaction accepted (202) and queued for Sentinel AI evaluation.');
       } else {
         warning('Transaction is under security review.');
       }

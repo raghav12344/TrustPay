@@ -14,6 +14,10 @@ const {
     authorize,
 } = require("../middleware/authMiddleware");
 
+const {
+    transactionRateLimiter,
+} = require("../middleware/rateLimiter");
+
 const router = express.Router();
 
 router.get(
@@ -45,6 +49,7 @@ router.post(
     "/",
     authenticate,
     authorize("CUSTOMER"),
+    transactionRateLimiter,
     createTransaction
 );
 

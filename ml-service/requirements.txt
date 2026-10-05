@@ -12,5 +12,7 @@ python-dotenv
 mysql-connector-python
 
 groq
+aio-pika
+pika
 
 pytest

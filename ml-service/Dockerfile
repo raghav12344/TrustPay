@@ -5,7 +5,7 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Required by LightGBM
+# OpenMP runtime required by LightGBM
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libgomp1 \

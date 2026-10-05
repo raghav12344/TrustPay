@@ -13,9 +13,86 @@ const {
     resolveLocation,
 } = require("../services/locationService");
 
+const {
+    FRAUD_EVALUATION_QUEUE,
+    publishFraudEvaluation,
+} = require("../services/queueService");
+
+const {
+    deleteCache,
+} = require("../config/redis");
+
 
 // ==========================================================
-// CREATE TRANSACTION
+// ASYNC FALLBACK PROCESSOR (WHEN RABBITMQ BROKER IS OFFLINE)
+// ==========================================================
+
+const processFraudEvaluationFallbackAsync = async (
+    transactionId,
+    accountId,
+    amount,
+    transactionType,
+    mlTransaction
+) => {
+    try {
+        const analysis = await analyzeTransaction(mlTransaction);
+
+        const predictionId = await saveFraudPrediction(
+            transactionId,
+            analysis.ml_prediction
+        );
+
+        if (
+            analysis.final_decision.final_risk_level === "HIGH" &&
+            analysis.final_decision.action === "ADMIN_REVIEW"
+        ) {
+            await createFraudAlert(
+                transactionId,
+                predictionId,
+                analysis.final_decision
+            );
+            return;
+        }
+
+        const [updateResult] = await db.query(
+            `UPDATE transactions
+             SET status = 'APPROVED'
+             WHERE transaction_id = ? AND status = 'PENDING'`,
+            [transactionId]
+        );
+
+        if (updateResult.affectedRows > 0) {
+            if (transactionType === "DEPOSIT") {
+                await db.query(
+                    `UPDATE accounts
+                     SET balance = balance + ?
+                     WHERE account_id = ?`,
+                    [amount, accountId]
+                );
+            } else {
+                await db.query(
+                    `UPDATE accounts
+                     SET balance = balance - ?
+                     WHERE account_id = ?`,
+                    [amount, accountId]
+                );
+            }
+
+            if (mlTransaction && mlTransaction.user_id) {
+                await deleteCache(`cache:accounts:me:${mlTransaction.user_id}`);
+            }
+        }
+    } catch (fallbackError) {
+        console.error(
+            `[ASYNC FALLBACK] Fraud evaluation failed for transaction #${transactionId}:`,
+            fallbackError.response?.data || fallbackError.message
+        );
+    }
+};
+
+
+// ==========================================================
+// CREATE TRANSACTION (ASYNC RABBITMQ PRODUCER - 202 ACCEPTED)
 // ==========================================================
 
 const createTransaction = async (req, res) => {
@@ -180,7 +257,7 @@ const createTransaction = async (req, res) => {
 
 
         // ==========================================
-        // Create transaction as PENDING
+        // Create transaction as PENDING in MySQL
         // ==========================================
 
         const [result] = await db.query(
@@ -209,12 +286,14 @@ const createTransaction = async (req, res) => {
 
 
         // ==========================================
-        // Build transaction for ML service
+        // Build message payload for RabbitMQ queue
         // ==========================================
 
         const transactionTime = new Date();
 
         const mlTransaction = {
+            transaction_id: transactionId,
+
             user_id: userId,
 
             account_id: accountId,
@@ -241,123 +320,42 @@ const createTransaction = async (req, res) => {
 
 
         // ==========================================
-        // Run AI / ML fraud analysis
+        // Publish to RabbitMQ fraud_evaluation_queue
         // ==========================================
 
-        let analysis;
+        const published = await publishFraudEvaluation(mlTransaction);
 
-        try {
-            analysis = await analyzeTransaction(
-                mlTransaction
-            );
-
-        } catch (mlError) {
-            console.error(
-                "ML ANALYSIS ERROR:",
-                mlError.response?.data ||
-                mlError.message
-            );
-
-            return res.status(502).json({
-                success: false,
-                message:
-                    "Transaction created but fraud analysis failed. Transaction remains pending.",
-                transactionId,
-                status: "PENDING",
+        if (!published) {
+            // Non-blocking async fallback if RabbitMQ broker is unreachable
+            setImmediate(() => {
+                processFraudEvaluationFallbackAsync(
+                    transactionId,
+                    accountId,
+                    amount,
+                    transactionType,
+                    mlTransaction
+                );
             });
         }
 
 
-        // ==========================================
-        // Save ML prediction
-        // ==========================================
-
-        const predictionId =
-            await saveFraudPrediction(
-                transactionId,
-                analysis.ml_prediction
-            );
+        // Invalidate cached account balance so subsequent /api/accounts/me fetches fresh DB state
+        await deleteCache(`cache:accounts:me:${userId}`);
 
         // ==========================================
-        // HIGH RISK → CREATE FRAUD ALERT
+        // Immediately return 202 Accepted
         // ==========================================
 
-        if (
-            analysis.final_decision.final_risk_level ===
-                "HIGH" &&
-            analysis.final_decision.action ===
-                "ADMIN_REVIEW"
-        ) {
-            await createFraudAlert(
-                transactionId,
-                predictionId,
-                analysis.final_decision
-            );
-
-            return res.status(201).json({
-                success: true,
-
-                message:
-                    "Transaction flagged for admin review",
-
-                transactionId,
-
-                status: "PENDING",
-
-                location,
-
-                fraud: analysis,
-            });
-        }
-
-
-        // ==========================================
-        // LOW / MEDIUM
-        // ==========================================
-
-        // ==========================================
-// LOW / MEDIUM → APPROVE TRANSACTION
-// ==========================================
-
-await db.query(
-    `UPDATE transactions
-     SET status = 'APPROVED'
-     WHERE transaction_id = ?`,
-    [transactionId]
-);
-
-// Update account balance
-if (transactionType === "DEPOSIT") {
-    await db.query(
-        `UPDATE accounts
-         SET balance = balance + ?
-         WHERE account_id = ?`,
-        [amount, accountId]
-    );
-} else {
-    await db.query(
-        `UPDATE accounts
-         SET balance = balance - ?
-         WHERE account_id = ?`,
-        [amount, accountId]
-    );
-}
-
-const [refreshedAccounts] = await db.query(
-    `SELECT balance FROM accounts WHERE account_id = ?`,
-    [accountId]
-);
-const newBalance = refreshedAccounts.length > 0 ? Number(refreshedAccounts[0].balance) : null;
-
-return res.status(201).json({
-    success: true,
-    message: "Transaction approved successfully",
-    transactionId,
-    status: "APPROVED",
-    newBalance,
-    location,
-    fraud: analysis,
-});
+        return res.status(202).json({
+            success: true,
+            message:
+                "Transaction accepted and queued for asynchronous fraud evaluation",
+            transactionId,
+            status: "PENDING",
+            queued: true,
+            queue: FRAUD_EVALUATION_QUEUE,
+            location,
+        });
 
     } catch (error) {
         console.error(
@@ -528,11 +526,12 @@ const approveTransaction = async (req, res) => {
             }
 
             const [accBalance] = await db.query(
-                `SELECT balance FROM accounts WHERE account_id = ?`,
+                `SELECT balance, user_id FROM accounts WHERE account_id = ?`,
                 [account_id]
             );
             if (accBalance.length > 0) {
                 newBalance = Number(accBalance[0].balance);
+                await deleteCache(`cache:accounts:me:${accBalance[0].user_id}`);
             }
         }
 

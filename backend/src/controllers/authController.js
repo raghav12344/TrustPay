@@ -1,6 +1,14 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../config/database");
+const {
+    getCache,
+    setCache,
+    deleteCache,
+} = require("../config/redis");
+
+const PROFILE_CACHE_TTL_SECONDS = 300;
+const getProfileCacheKey = (userId) => `cache:auth:profile:${userId}`;
 
 const getClientIp = (req) => {
     const forwarded = req.headers["x-forwarded-for"];
@@ -318,6 +326,9 @@ const login = async (req, res) => {
             }
         );
 
+        // Invalidate profile cache so fresh device metadata is served
+        await deleteCache(getProfileCacheKey(user.user_id));
+
         res.json({
             success: true,
             message: "Login successful",
@@ -348,7 +359,105 @@ const login = async (req, res) => {
     }
 };
 
+// ==========================================================
+// GET AUTHENTICATED USER PROFILE (REDIS CACHED, TTL = 300s)
+// ==========================================================
+
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const cacheKey = getProfileCacheKey(userId);
+
+        // 1. Check Redis Cache
+        const cachedProfile = await getCache(cacheKey);
+        if (cachedProfile) {
+            res.setHeader("X-Cache", "HIT");
+            return res.json({
+                success: true,
+                cached: true,
+                ...cachedProfile,
+            });
+        }
+
+        // 2. Cache Miss -> Query MySQL
+        const [users] = await db.query(
+            `SELECT
+                user_id,
+                name,
+                email,
+                phone,
+                role,
+                created_at
+             FROM users
+             WHERE user_id = ?
+             LIMIT 1`,
+            [userId]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User profile not found",
+            });
+        }
+
+        const user = users[0];
+
+        const [devices] = await db.query(
+            `SELECT
+                device_id,
+                device_type,
+                os,
+                ip_address,
+                is_trusted,
+                first_seen,
+                last_seen
+             FROM devices
+             WHERE user_id = ?
+             ORDER BY last_seen DESC`,
+            [userId]
+        );
+
+        const profilePayload = {
+            user: {
+                userId: user.user_id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                createdAt: user.created_at,
+            },
+            devices: devices.map((d) => ({
+                deviceId: d.device_id,
+                deviceType: d.device_type,
+                os: d.os,
+                ipAddress: d.ip_address,
+                isTrusted: Boolean(d.is_trusted),
+                firstSeen: d.first_seen,
+                lastSeen: d.last_seen,
+            })),
+        };
+
+        // 3. Populate Redis Cache with TTL
+        await setCache(cacheKey, profilePayload, PROFILE_CACHE_TTL_SECONDS);
+
+        res.setHeader("X-Cache", "MISS");
+        return res.json({
+            success: true,
+            cached: false,
+            ...profilePayload,
+        });
+    } catch (error) {
+        console.error("GET PROFILE ERROR:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch user profile",
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
+    getProfile,
 };

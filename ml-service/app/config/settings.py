@@ -17,6 +17,16 @@ ML_MODEL_PATH = os.getenv(
     "app/model/fraud_model.joblib",
 )
 
+RABBITMQ_URL = os.getenv(
+    "RABBITMQ_URL",
+    "amqp://guest:guest@localhost:5672/",
+)
+
+FRAUD_EVALUATION_QUEUE = os.getenv(
+    "FRAUD_EVALUATION_QUEUE",
+    "fraud_evaluation_queue",
+)
+
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not configured.")
 

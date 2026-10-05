@@ -1,63 +1,170 @@
 services:
-
+  # ==========================================================
+  # 1. FRONTEND TIER (React 18 + Vite on Port 5173)
+  # ==========================================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-
+    container_name: trustpay-frontend
     ports:
       - "5173:5173"
-
     volumes:
       - ./frontend:/app
       - /app/node_modules
-
     environment:
       - CHOKIDAR_USEPOLLING=true
-
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:5000/api}
     depends_on:
       - backend
-
     restart: unless-stopped
+    networks:
+      - trustpay-net
 
+  # ==========================================================
+  # 2. BACKEND API GATEWAY TIER (Node.js + Express 5 on Port 5000)
+  # ==========================================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-
+    container_name: trustpay-backend
     env_file:
       - ./backend/.env
-
     ports:
       - "5000:5000"
-
     volumes:
       - ./backend:/app
       - /app/node_modules
-
     environment:
-      - CHOKIDAR_USEPOLLING=true
-      # Inside Docker, "localhost" refers to the backend
-      # container itself, not the ml-service container.
+      - PORT=5000
+      - DATABASE_URL=${DATABASE_URL:-mysql://root:trustpay_root_pass@db:3306/trustpay}
+      - DB_SSL=${DB_SSL:-false}
+      - JWT_SECRET=${JWT_SECRET:-trustpay_super_secret_jwt_key_2026}
       - ML_SERVICE_URL=http://ml-service:8000
-
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+      - FRAUD_EVALUATION_QUEUE=${FRAUD_EVALUATION_QUEUE:-fraud_evaluation_queue}
+      - REDIS_URL=redis://redis:6379
     depends_on:
-      - ml-service
-
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      - trustpay-net
 
+  # ==========================================================
+  # 3. SENTINEL ML & GENAI WORKER TIER (FastAPI on Port 8000)
+  # ==========================================================
   ml-service:
     build:
       context: ./ml-service
       dockerfile: Dockerfile
-
+    container_name: trustpay-ml-service
     env_file:
       - ./ml-service/.env
-
     ports:
       - "8000:8000"
-
     volumes:
       - ./ml-service:/app
-
+    environment:
+      - PORT=8000
+      - DATABASE_URL=${DATABASE_URL:-mysql://root:trustpay_root_pass@db:3306/trustpay}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672/
+      - FRAUD_EVALUATION_QUEUE=fraud_evaluation_queue
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - ML_MODEL_PATH=app/model/fraud_model.joblib
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - trustpay-net
+
+  # ==========================================================
+  # 4. RELATIONAL LEDGER TIER (MySQL 8.0 on Port 3306)
+  # ==========================================================
+  db:
+    image: mysql:8.0
+    container_name: trustpay-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-trustpay_root_pass}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-trustpay}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/indexes.sql:/docker-entrypoint-initdb.d/02-indexes.sql:ro
+      - ./database/triggers.sql:/docker-entrypoint-initdb.d/03-triggers.sql:ro
+      - ./database/procedures.sql:/docker-entrypoint-initdb.d/04-procedures.sql:ro
+      - ./database/views.sql:/docker-entrypoint-initdb.d/05-views.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-trustpay_root_pass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - trustpay-net
+
+  # ==========================================================
+  # 5. MESSAGE BROKER TIER (RabbitMQ Management on 5672 & 15672)
+  # ==========================================================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: trustpay-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - trustpay-net
+
+  # ==========================================================
+  # 6. IN-MEMORY CACHE & RATE LIMITER TIER (Redis Alpine on 6379)
+  # ==========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: trustpay-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - trustpay-net
+
+volumes:
+  mysql_data:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  trustpay-net:
+    driver: bridge
