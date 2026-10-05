@@ -3,6 +3,7 @@ const express = require("express");
 const {
     createTransaction,
     getCustomerTransactions,
+    getTransactionStatus,
     getFraudAlerts,
     getAllTransactionsAdmin,
     approveTransaction,
@@ -51,6 +52,13 @@ router.post(
     authorize("CUSTOMER"),
     transactionRateLimiter,
     createTransaction
+);
+
+router.get(
+    "/:transactionId/status",
+    authenticate,
+    authorize("CUSTOMER"),
+    getTransactionStatus
 );
 
 router.get(

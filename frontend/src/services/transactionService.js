@@ -22,6 +22,11 @@ export const transactionService = {
     const response = await api.get('/transactions');
     return response.data;
   },
+
+  getTransactionStatus: async (transactionId) => {
+    const response = await api.get(`/transactions/${transactionId}/status`);
+    return response.data;
+  },
 };
 
 export default transactionService;

@@ -35,7 +35,25 @@ const processFraudEvaluationFallbackAsync = async (
     mlTransaction
 ) => {
     try {
+        // Idempotency guard: check if RabbitMQ worker already evaluated this transaction
+        const [existingPreds] = await db.query(
+            `SELECT prediction_id FROM fraud_predictions WHERE transaction_id = ? LIMIT 1`,
+            [transactionId]
+        );
+        if (existingPreds.length > 0) {
+            return;
+        }
+
         const analysis = await analyzeTransaction(mlTransaction);
+
+        // Re-check before inserting to avoid race condition with RabbitMQ consumer
+        const [recheckPreds] = await db.query(
+            `SELECT prediction_id FROM fraud_predictions WHERE transaction_id = ? LIMIT 1`,
+            [transactionId]
+        );
+        if (recheckPreds.length > 0) {
+            return;
+        }
 
         const predictionId = await saveFraudPrediction(
             transactionId,
@@ -336,6 +354,18 @@ const createTransaction = async (req, res) => {
                     mlTransaction
                 );
             });
+        } else {
+            // Safety watchdog: if RabbitMQ consumer has not settled the transaction within 2.5s
+            // (e.g., during a cloud cold-start), idempotently evaluate via HTTP fallback.
+            setTimeout(() => {
+                processFraudEvaluationFallbackAsync(
+                    transactionId,
+                    accountId,
+                    amount,
+                    transactionType,
+                    mlTransaction
+                );
+            }, 2500);
         }
 
 
@@ -388,10 +418,32 @@ const getCustomerTransactions = async (req, res) => {
                 t.transaction_type,
                 t.merchant,
                 t.transaction_time,
-                t.status
+                t.status,
+                fp.prediction_id,
+                fp.risk_score,
+                fp.prediction AS risk_level,
+                fa.alert_id
              FROM transactions t
              JOIN accounts a
                 ON t.account_id = a.account_id
+             LEFT JOIN (
+                SELECT fp1.*
+                FROM fraud_predictions fp1
+                INNER JOIN (
+                    SELECT transaction_id, MAX(prediction_id) AS max_p_id
+                    FROM fraud_predictions
+                    GROUP BY transaction_id
+                ) fp_max ON fp1.prediction_id = fp_max.max_p_id
+             ) fp ON t.transaction_id = fp.transaction_id
+             LEFT JOIN (
+                SELECT fa1.*
+                FROM fraud_alerts fa1
+                INNER JOIN (
+                    SELECT transaction_id, MAX(alert_id) AS max_a_id
+                    FROM fraud_alerts
+                    GROUP BY transaction_id
+                ) fa_max ON fa1.alert_id = fa_max.max_a_id
+             ) fa ON t.transaction_id = fa.transaction_id
              WHERE a.user_id = ?
              ORDER BY t.transaction_time DESC`,
             [userId]
@@ -412,6 +464,85 @@ const getCustomerTransactions = async (req, res) => {
             success: false,
             message:
                 "Failed to fetch transactions",
+        });
+    }
+};
+
+
+// ==========================================================
+// GET SINGLE TRANSACTION STATUS (FOR ASYNC POLLING)
+// ==========================================================
+
+const getTransactionStatus = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { transactionId } = req.params;
+
+        const [rows] = await db.query(
+            `SELECT
+                t.transaction_id,
+                t.account_id,
+                t.amount,
+                t.transaction_type,
+                t.merchant,
+                t.status,
+                a.balance AS current_balance,
+                fp.prediction_id,
+                fp.risk_score,
+                fp.fraud_probability,
+                fp.prediction AS risk_level,
+                fa.alert_id,
+                fa.severity AS alert_severity,
+                fa.reason AS alert_reason
+             FROM transactions t
+             JOIN accounts a
+                ON t.account_id = a.account_id
+             LEFT JOIN fraud_predictions fp
+                ON t.transaction_id = fp.transaction_id
+             LEFT JOIN fraud_alerts fa
+                ON t.transaction_id = fa.transaction_id
+             WHERE t.transaction_id = ? AND a.user_id = ?
+             ORDER BY fp.prediction_id DESC, fa.alert_id DESC
+             LIMIT 1`,
+            [transactionId, userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Transaction not found",
+            });
+        }
+
+        const row = rows[0];
+        const evaluated = Boolean(
+            row.prediction_id ||
+            row.status === "APPROVED" ||
+            row.status === "REJECTED"
+        );
+
+        if (evaluated) {
+            await deleteCache(`cache:accounts:me:${userId}`);
+        }
+
+        const rawRisk = row.risk_level || "LOW_RISK";
+        const riskLevel = rawRisk.replace("_RISK", "");
+
+        return res.json({
+            success: true,
+            transactionId: row.transaction_id,
+            status: row.status,
+            evaluated,
+            flagged: Boolean(row.alert_id),
+            riskLevel,
+            riskScore: row.risk_score != null ? Number(row.risk_score) : null,
+            newBalance: Number(row.current_balance),
+        });
+    } catch (error) {
+        console.error("GET TRANSACTION STATUS ERROR:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to check transaction status",
         });
     }
 };
@@ -958,6 +1089,7 @@ const getAllTransactionsAdmin = async (req, res) => {
 module.exports = {
     createTransaction,
     getCustomerTransactions,
+    getTransactionStatus,
     getFraudAlerts,
     getAllTransactionsAdmin,
     approveTransaction,

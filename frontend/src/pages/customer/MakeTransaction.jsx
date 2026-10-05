@@ -87,6 +87,106 @@ export const MakeTransaction = () => {
     );
   };
 
+  // Helper to check single transaction evaluation state (with fallback to list endpoint)
+  const checkSingleTransactionState = async (txId) => {
+    try {
+      const statusData = await transactionService.getTransactionStatus(txId);
+      if (statusData && statusData.success) {
+        return {
+          status: statusData.status,
+          evaluated: Boolean(statusData.evaluated),
+          flagged: Boolean(statusData.flagged),
+          riskLevel: statusData.riskLevel || 'LOW',
+          newBalance: statusData.newBalance,
+        };
+      }
+    } catch {
+      // Fallback if backend /status endpoint is not yet deployed
+      try {
+        const listData = await transactionService.getCustomerTransactions();
+        const found = listData?.transactions?.find(
+          (t) => String(t.transaction_id) === String(txId)
+        );
+        if (found) {
+          const isApprovedOrRejected =
+            found.status === 'APPROVED' || found.status === 'REJECTED';
+          const hasPrediction =
+            found.prediction_id !== undefined && found.prediction_id !== null;
+          const hasAlert =
+            found.alert_id !== undefined && found.alert_id !== null;
+          const rawRisk = found.risk_level || 'LOW_RISK';
+          return {
+            status: found.status,
+            evaluated: isApprovedOrRejected || hasPrediction || hasAlert,
+            flagged: hasAlert,
+            riskLevel: rawRisk.replace('_RISK', ''),
+            newBalance: null,
+          };
+        }
+      } catch {
+        // Ignore transient poll error
+      }
+    }
+    return null;
+  };
+
+  // If the modal opened while Sentinel AI is still evaluating (e.g. cold start > 4s),
+  // keep polling until evaluation completes and live-update the modal in place.
+  useEffect(() => {
+    if (!resultModal || resultModal.evaluated || resultModal.status !== 'PENDING') {
+      return;
+    }
+
+    let cancelled = false;
+    const intervalId = setInterval(async () => {
+      const state = await checkSingleTransactionState(resultModal.transactionId);
+      if (cancelled || !state) return;
+
+      if (state.evaluated || state.status !== 'PENDING') {
+        clearInterval(intervalId);
+        let updatedBalance = state.newBalance;
+        if (updatedBalance === null || updatedBalance === undefined) {
+          try {
+            const accRes = await accountService.getMyAccount();
+            if (accRes && accRes.account) {
+              updatedBalance = accRes.account.balance;
+            }
+          } catch {
+            // Ignore
+          }
+        }
+        if (updatedBalance !== null && updatedBalance !== undefined) {
+          setAccount((prev) => (prev ? { ...prev, balance: updatedBalance } : null));
+        }
+
+        setResultModal((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: state.status,
+                evaluated: true,
+                flagged: state.status === 'PENDING' ? true : state.flagged,
+                riskLevel: state.riskLevel || prev.riskLevel,
+                isMedium: state.riskLevel === 'MEDIUM',
+                newBalance: updatedBalance ?? prev.newBalance,
+              }
+            : null
+        );
+
+        if (state.status === 'APPROVED') {
+          success('Transaction approved successfully!');
+        } else {
+          warning('Transaction flagged for security review.');
+        }
+      }
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [resultModal, success, warning]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -124,40 +224,65 @@ export const MakeTransaction = () => {
 
       const response = await transactionService.createTransaction(payload);
 
-      // Analyze response:
-      // Status is PENDING when accepted asynchronously (202 Accepted) or APPROVED/PENDING
-      const riskLevel = response.fraud?.final_decision?.final_risk_level || 'LOW';
-      const status = response.status; // 'PENDING' (202 Queued) or 'APPROVED'
-      const isQueued = Boolean(response.queued);
+      let finalStatus = response.status; // 'PENDING' (202 Queued) or 'APPROVED'
+      let riskLevel = response.fraud?.final_decision?.final_risk_level || 'LOW';
+      let isQueued = Boolean(response.queued);
+      let evaluated = finalStatus === 'APPROVED' || Boolean(response.fraud);
+      let flagged = finalStatus === 'PENDING' && !isQueued;
+      let updatedBalance = response.newBalance;
 
-      // Update local account balance immediately if provided
-      if (response.newBalance !== undefined && response.newBalance !== null) {
-        setAccount((prev) => (prev ? { ...prev, balance: response.newBalance } : null));
-      } else {
-        // Refresh account balance after async worker processes the queue (~2s)
-        setTimeout(() => {
-          accountService.getMyAccount().then((res) => {
-            if (res && res.account) setAccount(res.account);
-          }).catch(() => {});
-        }, 2000);
+      // When queued via RabbitMQ (202 Accepted), poll briefly (~0.5s - 3.5s) for Sentinel AI settlement
+      if (isQueued && finalStatus === 'PENDING') {
+        for (let attempt = 0; attempt < 7; attempt++) {
+          await new Promise((r) => setTimeout(r, 550));
+          const pollState = await checkSingleTransactionState(response.transactionId);
+          if (pollState && (pollState.evaluated || pollState.status !== 'PENDING')) {
+            finalStatus = pollState.status;
+            evaluated = true;
+            flagged = pollState.status === 'PENDING' ? true : pollState.flagged;
+            riskLevel = pollState.riskLevel || riskLevel;
+            if (pollState.newBalance !== null && pollState.newBalance !== undefined) {
+              updatedBalance = pollState.newBalance;
+            }
+            break;
+          }
+        }
+      }
+
+      // Refresh account balance if not yet populated
+      if (updatedBalance === undefined || updatedBalance === null) {
+        try {
+          const accRes = await accountService.getMyAccount();
+          if (accRes && accRes.account) {
+            updatedBalance = accRes.account.balance;
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      if (updatedBalance !== undefined && updatedBalance !== null) {
+        setAccount((prev) => (prev ? { ...prev, balance: updatedBalance } : null));
       }
 
       setResultModal({
         transactionId: response.transactionId,
         amount: numAmount,
         merchant: merchant.trim() || transactionType,
-        status,
+        status: finalStatus,
         queued: isQueued,
+        evaluated,
+        flagged,
         riskLevel,
-        newBalance: response.newBalance,
+        newBalance: updatedBalance,
         isMedium: riskLevel === 'MEDIUM',
         location: response.location,
       });
 
-      if (status === 'APPROVED') {
+      if (finalStatus === 'APPROVED') {
         success('Transaction approved successfully!');
-      } else if (isQueued) {
-        info('Transaction accepted (202) and queued for Sentinel AI evaluation.');
+      } else if (!evaluated) {
+        info('Verifying transaction security with Sentinel AI...');
       } else {
         warning('Transaction is under security review.');
       }
@@ -410,7 +535,7 @@ export const MakeTransaction = () => {
             {submitting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                <span>Processing transaction...</span>
+                <span>Verifying with Sentinel AI...</span>
               </>
             ) : (
               <>
@@ -430,6 +555,8 @@ export const MakeTransaction = () => {
           title={
             resultModal.status === 'APPROVED'
               ? 'Transaction Approved'
+              : !resultModal.evaluated
+              ? 'Verifying Transaction Security'
               : 'Transaction Under Security Review'
           }
           maxWidth="480px"
@@ -453,10 +580,14 @@ export const MakeTransaction = () => {
                 backgroundColor:
                   resultModal.status === 'APPROVED'
                     ? 'var(--color-success-bg)'
+                    : !resultModal.evaluated
+                    ? 'var(--primary-light)'
                     : 'var(--color-warning-bg)',
                 color:
                   resultModal.status === 'APPROVED'
                     ? 'var(--color-success)'
+                    : !resultModal.evaluated
+                    ? 'var(--primary)'
                     : 'var(--color-warning)',
                 display: 'flex',
                 alignItems: 'center',
@@ -466,6 +597,8 @@ export const MakeTransaction = () => {
             >
               {resultModal.status === 'APPROVED' ? (
                 <CheckCircle2 size={36} strokeWidth={2.2} />
+              ) : !resultModal.evaluated ? (
+                <Loader2 size={34} strokeWidth={2.2} className="animate-spin" />
               ) : (
                 <Clock size={36} strokeWidth={2.2} />
               )}
@@ -502,6 +635,8 @@ export const MakeTransaction = () => {
                 ) : (
                   'Your transaction has been successfully processed.'
                 )
+              ) : !resultModal.evaluated ? (
+                'Sentinel AI is evaluating your transaction in real time. Status will update automatically in a moment...'
               ) : (
                 'Our security system flagged this transaction for additional verification. An administrator will review and resolve it shortly.'
               )}
@@ -536,7 +671,11 @@ export const MakeTransaction = () => {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Status:</span>
-                <StatusBadge status={resultModal.status} />
+                {!resultModal.evaluated && resultModal.status === 'PENDING' ? (
+                  <span className="badge badge-info">VERIFYING...</span>
+                ) : (
+                  <StatusBadge status={resultModal.status} />
+                )}
               </div>
 
               {resultModal.status === 'APPROVED' && (

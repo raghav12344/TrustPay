@@ -210,7 +210,15 @@ export const TransactionDetails = () => {
           >
             <Clock size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
-              <strong>Security Hold:</strong> This transaction was flagged for manual verification by our automated fraud detection system. An admin specialist is reviewing the authorization.
+              {transaction.alert_id || transaction.prediction_id ? (
+                <>
+                  <strong>Security Hold:</strong> This transaction was flagged for manual verification by our automated fraud detection system. An admin specialist is reviewing the authorization.
+                </>
+              ) : (
+                <>
+                  <strong>Sentinel AI Verification in Progress:</strong> This transaction is currently being evaluated by our automated fraud detection engine and will update momentarily.
+                </>
+              )}
             </div>
           </div>
         )}
