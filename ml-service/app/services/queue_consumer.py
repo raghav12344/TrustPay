@@ -1,6 +1,10 @@
 import asyncio
 import json
+import logging
 import aio_pika
+
+logging.getLogger("aiormq").setLevel(logging.CRITICAL)
+logging.getLogger("aio_pika").setLevel(logging.CRITICAL)
 
 from app.config.settings import (
     RABBITMQ_URL,
@@ -129,16 +133,23 @@ async def on_fraud_evaluation_message(
 
 async def start_rabbitmq_consumer(stop_event: asyncio.Event) -> None:
     """
-    Background loop that maintains a robust connection to RabbitMQ
-    and consumes from `fraud_evaluation_queue`.
+    Background loop that maintains a connection to RabbitMQ
+    and consumes from `fraud_evaluation_queue`. If deployed on cloud without
+    an external RabbitMQ broker (defaulting to localhost:5672), gracefully
+    falls back to HTTP endpoint mode without spamming error logs.
     """
+    is_localhost_default = (
+        "localhost" in RABBITMQ_URL or "127.0.0.1" in RABBITMQ_URL
+    )
+    failed_attempts = 0
+    max_localhost_attempts = 2
+
     while not stop_event.is_set():
         connection = None
         try:
-            print(
-                f"[RABBITMQ CONSUMER] Connecting to broker at {RABBITMQ_URL}..."
-            )
-            connection = await aio_pika.connect_robust(RABBITMQ_URL)
+            connection = await aio_pika.connect(RABBITMQ_URL, timeout=5.0)
+            failed_attempts = 0
+
             channel = await connection.channel()
             await channel.set_qos(prefetch_count=10)
 
@@ -149,7 +160,7 @@ async def start_rabbitmq_consumer(stop_event: asyncio.Event) -> None:
 
             await queue.consume(on_fraud_evaluation_message)
             print(
-                f"[RABBITMQ CONSUMER] Actively consuming from '{FRAUD_EVALUATION_QUEUE}'."
+                f"[RABBITMQ CONSUMER] Connected and actively consuming from '{FRAUD_EVALUATION_QUEUE}'."
             )
 
             await stop_event.wait()
@@ -157,8 +168,16 @@ async def start_rabbitmq_consumer(stop_event: asyncio.Event) -> None:
         except asyncio.CancelledError:
             break
         except Exception as exc:
+            failed_attempts += 1
+            if is_localhost_default and failed_attempts >= max_localhost_attempts:
+                print(
+                    "[RABBITMQ CONSUMER] No local broker at localhost:5672. "
+                    "Operating in HTTP /evaluate-transaction mode (set RABBITMQ_URL to enable queue worker)."
+                )
+                break
+
             print(
-                f"[RABBITMQ CONSUMER] Broker connection unavailable ({exc}). Retrying in 5s..."
+                f"[RABBITMQ CONSUMER] Broker unavailable ({exc}). Retrying in 5s..."
             )
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=5.0)
@@ -167,3 +186,4 @@ async def start_rabbitmq_consumer(stop_event: asyncio.Event) -> None:
         finally:
             if connection and not connection.is_closed:
                 await connection.close()
+

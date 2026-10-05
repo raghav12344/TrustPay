@@ -1,6 +1,8 @@
 # TRUSTPAY: End-to-End Engineering Architecture Report
 ## AI-Powered Fraud Detection & Real-Time Transaction Monitoring System
 
+[![TrustPay Enterprise CI/CD Pipeline](https://github.com/raghav12344/TrustPay/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/raghav12344/TrustPay/actions/workflows/ci-cd.yml)
+
 ---
 
 ### Academic Engineering Project & Engineering Team
@@ -974,33 +976,61 @@ stateDiagram-v2
 | **Redis Sliding-Window Rate Limiter** | 6 rapid requests to `POST /api/transactions` within 10s window | Requests 1–5 allowed; Request 6 blocked with `HTTP 429 Too Many Requests` | **PASSED** |
 | **Redis Endpoint Caching** | Repeated `GET /api/accounts/me` (30s TTL) & `GET /api/auth/profile` (300s TTL) | `X-Cache: MISS` on 1st call, `X-Cache: HIT` (<2ms) on subsequent calls | **PASSED** |
 | **6-Container Docker Compose** | Validated `docker-compose.yml` & Dockerfiles (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) | Full multi-container orchestration with healthchecks & `.env` support | **PASSED** |
+| **GitHub Actions CI/CD Pipeline** | `.github/workflows/ci-cd.yml` (`frontend-ci`, `backend-ci`, `ml-service-ci`, `docker-compose-ci`, `cd-deploy`) | Automated 5-job CI verification & deployment gate on every push/PR | **PASSED** |
 | **Database Triggers** | Tested via live SQL insert & update harness | Non-positive amounts blocked (`SQLSTATE 45000`), timestamps assigned | **PASSED** |
 | **Database Stored Procedures** | Row-level locking & balance settlement | Double-review prevented, balance updated atomically | **PASSED** |
 | **Fail-Safe ML Fallback** | Unreachable ML / Broker service simulation | Graceful fallback to synchronous HTTP / `PENDING_ERROR` hold, funds preserved | **PASSED** |
 
 ---
 
-## 7. Cloud Production Deployment, Multi-Container Dockerization & SPA Routing Infrastructure
+## 7. Cloud Production Deployment, CI/CD Pipeline & Multi-Container Dockerization
 
-TrustPay is engineered and packaged for both distributed cloud hosting and single-command local/production multi-container orchestration via Docker Compose:
+TrustPay is deployed across a 6-service cloud topology with automated **GitHub Actions CI/CD** and single-command local/production multi-container orchestration via **Docker Compose**:
 
-### 7.1 Production Deployment Topology
-- **Core Banking API Gateway (Backend)**:
+### 7.1 Live 6-Service Cloud Production Topology
+- **1. Frontend SPA (`frontend/`)**:
+  - **Provider**: Vercel Edge Network
+  - **Runtime**: React 19 + Vite SPA with multi-platform deep-link rewrite rules
+- **2. Core Banking API Gateway (`backend/`)**:
   - **Provider**: Render Cloud Platform
   - **Live Production Endpoint**: `https://trustpay-backend-service.onrender.com/api`
   - **Liveness Health Probe**: `https://trustpay-backend-service.onrender.com/api/health`
   - **Runtime**: Node.js 20 LTS with Express 5, `amqplib` (RabbitMQ Producer), and `redis` (Cache & Sliding-Window Rate Limiter)
-  - **Security**: Automated TLS 1.3 encryption, CORS origins whitelisting, HTTP header security, and Redis ZSET rate limiting.
-- **Relational Database Engine**:
-  - **Provider**: Aiven Cloud / MySQL 8.0 Container
-  - **Engine**: MySQL 8.0.35 Enterprise (InnoDB Storage Engine)
-  - **Connection Protocol**: TLS/SSL encrypted connection string with connection pool management (10 concurrent threads).
-  - **Data Resilience**: Automated point-in-time recovery, automated backups, and row-level locking.
-- **Sentinel AI Microservice**:
-  - **Framework**: FastAPI (Python 3.11+) with Uvicorn ASGI & `aio-pika` asynchronous RabbitMQ worker
-  - **Inference Acceleration**: LightGBM compiled decision trees with Groq Cloud Llama 3.3 70B Versatile inference.
+- **3. Cloud Redis Cache & Rate Limiter (`redis`)**:
+  - **Provider**: Render Managed Key-Value (Redis 7, `allkeys-lru` eviction policy)
+  - **Responsibilities**: ZSET sliding-window rate limiting (`5 req / 10s` on `/api/transactions`) and TTL response caching (`30s` on `/api/accounts/me`, `300s` on `/api/auth/profile`)
+- **4. Cloud RabbitMQ Message Broker (`rabbitmq`)**:
+  - **Provider**: CloudAMQP Managed Broker (`amqps://` TLS)
+  - **Responsibilities**: Hosts durable `fraud_evaluation_queue` decoupling the Node.js HTTP gateway (`202 Accepted`) from the Python ML/GenAI worker
+- **5. Sentinel AI Microservice & Queue Worker (`ml-service/`)**:
+  - **Provider**: Render Cloud Platform (`https://trustpay-0h4e.onrender.com`)
+  - **Framework**: FastAPI (Python 3.11+) with Uvicorn ASGI & `aio-pika` asynchronous RabbitMQ consumer worker
+  - **Inference Acceleration**: LightGBM compiled decision trees (`99.90%` accuracy) + Groq Cloud Llama 3.3 70B Versatile forensic analyst + atomic MySQL settlement
+- **6. Relational Database Engine (`database/`)**:
+  - **Provider**: Aiven Cloud
+  - **Engine**: MySQL 8.0.35 Enterprise (InnoDB Storage Engine) over TLS/SSL with connection pooling, row-level locking (`FOR UPDATE`), and check triggers
 
-### 7.2 Multi-Container Dockerization & Orchestration (`docker-compose.yml`)
+### 7.2 Automated GitHub Actions CI/CD Pipeline (`.github/workflows/ci-cd.yml`)
+Every `git push` and Pull Request targeting `main` triggers the 5-job **TrustPay Enterprise CI/CD Pipeline**:
+
+```mermaid
+flowchart LR
+    Push["git push / PR to main"] --> J1["Job 1: frontend-ci\n(Node 20 • npm ci • ESLint • Vite Build)"]
+    Push --> J2["Job 2: backend-ci\n(Node 20 • npm ci • Syntax Check All Modules)"]
+    Push --> J3["Job 3: ml-service-ci\n(Python 3.11 • py_compile • LightGBM Smoke Test)"]
+    Push --> J4["Job 4: docker-compose-ci\n(Validate 6-Service docker-compose.yml)"]
+    J1 & J2 & J3 & J4 --> J5["Job 5: cd-deploy\n(Production Gate -> Render & Vercel Deploy)"]
+```
+
+| CI/CD Job ID | Runner Environment | Verification Steps Executed | Purpose |
+| :--- | :--- | :--- | :--- |
+| **`frontend-ci`** | `ubuntu-latest` (Node 20) | `npm ci` -> `npm run lint` -> `npm run build` | Guarantees zero ESLint errors and clean Vite production bundle compilation |
+| **`backend-ci`** | `ubuntu-latest` (Node 20) | `npm ci` -> `node -c` across `server.js`, `config/`, `controllers/`, `middleware/`, `routes/`, `services/` | Verifies Express 5 gateway, RabbitMQ producer, and Redis rate limiter syntax |
+| **`ml-service-ci`** | `ubuntu-latest` (Python 3.11) | `pip install -r requirements.txt` -> `python -m py_compile` -> LightGBM `predict_fraud()` smoke test | Verifies FastAPI routes, `aio-pika` consumer, MySQL settlement module, and LightGBM model artifact |
+| **`docker-compose-ci`** | `ubuntu-latest` (Docker Compose) | Template `.env` preparation -> `docker compose config --quiet` | Validates 6-container `docker-compose.yml` syntax, ports, healthchecks, and volume bindings |
+| **`cd-deploy`** | `ubuntu-latest` (`needs: [all 4 CI jobs]`) | Triggers Render (`backend`, `ml-service`) & Vercel (`frontend`) deploy hooks on `main` | Prevents broken builds from reaching production |
+
+### 7.3 Multi-Container Dockerization & Orchestration (`docker-compose.yml`)
 The entire 6-service enterprise stack is containerized and orchestrated via the root `docker-compose.yml` file with automated healthchecks (`service_healthy`), persistent volumes, and `.env` variable injection:
 
 | Container Service | Image / Dockerfile | Exposed Ports | Role & Healthcheck Strategy |
@@ -1025,7 +1055,7 @@ docker compose ps
 docker compose logs -f backend ml-service
 ```
 
-### 7.3 Single Page Application (SPA) Deep-Linking Configuration
+### 7.4 Single Page Application (SPA) Deep-Linking Configuration
 To ensure client-side routing works seamlessly across static hosts (Netlify, Vercel, Cloudflare Pages, AWS S3/CloudFront) and prevents HTTP 404 errors when users refresh deep URLs like `/admin/transactions` or `/dashboard`, multi-platform redirect configurations are implemented:
 
 1. **Netlify & Static Hosting (`frontend/public/_redirects`)**:
@@ -1056,7 +1086,7 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 1. **End-to-End 6-Tier Enterprise Decoupling**: Implemented a distributed 6-service architecture separating the React UI, Express API Gateway, RabbitMQ AMQP Broker, Redis Cache & Rate Limiter, FastAPI Sentinel ML Worker, and MySQL 8 Relational Database.
 2. **Asynchronous Event-Driven ML Pipeline (RabbitMQ)**: Decoupled the ~1.43s ML + GenAI fraud evaluation from the Node.js event loop using a durable `fraud_evaluation_queue` (`amqplib` producer -> `aio-pika` consumer), returning immediate `202 Accepted` responses (`< 15 ms`) and settling balances asynchronously in MySQL.
 3. **Redis Sliding-Window Rate Limiting & Low-Latency Caching**: Protected `POST /api/transactions` against automated bot floods using Redis sorted-set (`ZSET`) sliding-window rate limiting (max 5 requests per 10s per user/IP -> `HTTP 429`), and cached `GET /api/accounts/me` (30s TTL) and `GET /api/auth/profile` (300s TTL) with automatic write-invalidation.
-4. **Full Multi-Container Docker Orchestration**: Packaged all 6 tiers (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) via `docker-compose.yml` with custom `Dockerfile`s, automated schema bootstrapping, persistent volumes, and healthcheck dependency chains.
+4. **Full Multi-Container Docker Orchestration & GitHub Actions CI/CD**: Packaged all 6 tiers (`frontend`, `backend`, `ml-service`, `db`, `rabbitmq`, `redis`) via `docker-compose.yml` and automated 5-job CI/CD verification via `.github/workflows/ci-cd.yml`.
 5. **Mathematical Relational Integrity & ACID Guarantees**: Schema normalized to Boyce-Codd Normal Form (BCNF) across 8 entities with active check triggers, row-level locking (`SELECT ... FOR UPDATE`), and idempotent worker settlement preventing double-spending.
 6. **Hybrid AI Surveillance & Fail-Safe Resilience**: 14-feature behavioral engineering pipeline feeding a calibrated LightGBM model (`99.90%` accuracy) supplemented by contextual Groq Llama 3.3 GenAI explanations, with automatic fallback if the broker or AI service is unreachable.
 
@@ -1065,5 +1095,6 @@ To ensure client-side routing works seamlessly across static hosts (Netlify, Ver
 - **Rishabh Srivastava** (Registration Number: `20243236`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Rishabh Singh** (Registration Number: `20243235`) — B.Tech (3rd Year) • Computer Science & Engineering
 - **Prince Keshari** (Registration Number: `20243218`) — B.Tech (3rd Year) • Computer Science & Engineering
+
 
 

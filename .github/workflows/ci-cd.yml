@@ -1,0 +1,200 @@
+name: TrustPay Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  # ============================================================================
+  # JOB 1: FRONTEND TIER CI (React 19 + Vite Lint & Production Bundle Build)
+  # ============================================================================
+  frontend-ci:
+    name: "Tier 1: Frontend SPA (Lint & Vite Build)"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Run ESLint Static Analysis
+        run: npm run lint
+
+      - name: Build Production Vite Bundle
+        env:
+          VITE_API_URL: https://trustpay-backend-service.onrender.com/api
+        run: npm run build
+
+  # ============================================================================
+  # JOB 2: BACKEND API GATEWAY CI (Node.js + Express 5 + RabbitMQ + Redis)
+  # ============================================================================
+  backend-ci:
+    name: "Tier 2: API Gateway, RabbitMQ Producer & Redis Limiter"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Backend Dependencies
+        run: npm ci
+
+      - name: Validate Express Gateway, Controllers, RabbitMQ & Redis Modules
+        run: |
+          node -c src/server.js
+          for f in src/config/*.js src/controllers/*.js src/middleware/*.js src/routes/*.js src/services/*.js; do
+            echo "Checking syntax: $f"
+            node -c "$f"
+          done
+
+  # ============================================================================
+  # JOB 3: SENTINEL AI WORKER CI (FastAPI + LightGBM + aio-pika Consumer)
+  # ============================================================================
+  ml-service-ci:
+    name: "Tier 3: Sentinel ML Service & RabbitMQ Worker (FastAPI)"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ml-service
+    env:
+      DATABASE_URL: mysql://root:trustpay_root_pass@localhost:3306/trustpay
+      GROQ_API_KEY: gsk_ci_verification_placeholder_key
+      GROQ_MODEL: llama-3.3-70b-versatile
+      ML_MODEL_PATH: app/model/fraud_model.joblib
+      RABBITMQ_URL: amqp://guest:guest@localhost:5672/
+      FRAUD_EVALUATION_QUEUE: fraud_evaluation_queue
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: ml-service/requirements.txt
+
+      - name: Install Python ML & Async Worker Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile FastAPI Routes, RabbitMQ Consumer & Settlement Service
+        run: |
+          python -m py_compile app/main.py \
+            app/api/routes.py \
+            app/config/database.py \
+            app/config/settings.py \
+            app/decision/engine.py \
+            app/genai/analyst.py \
+            app/genai/context_builder.py \
+            app/ml/feature_builder.py \
+            app/ml/predict.py \
+            app/services/feature_service.py \
+            app/services/queue_consumer.py \
+            app/services/settlement_service.py \
+            app/services/transaction_service.py
+
+      - name: Smoke-Test LightGBM Fraud Model Artifact & Inference Pipeline
+        run: |
+          python -c "
+          from app.ml.predict import predict_fraud
+          sample_features = {
+              'amount': 2500.0,
+              'customer_mean_amount': 1800.0,
+              'customer_std_amount': 400.0,
+              'amount_to_mean_ratio': 1.38,
+              'is_unusual_amount': 0,
+              'hour_of_day': 14,
+              'is_unusual_time': 0,
+              'known_device': 1,
+              'new_device': 0,
+              'known_location': 1,
+              'location_changed': 0,
+              'transaction_count': 12,
+              'history_confidence': 'ESTABLISHED'
+          }
+          res = predict_fraud(sample_features)
+          assert 'risk_score' in res and 'fraud_probability' in res
+          print('LightGBM Smoke Test Passed:', res)
+          "
+
+  # ============================================================================
+  # JOB 4: MULTI-CONTAINER DOCKER COMPOSE ORCHESTRATION VALIDATION
+  # ============================================================================
+  docker-compose-ci:
+    name: "Tier 4: 6-Container Docker Compose Validation"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Environment File from Template
+        run: |
+          cp .env.example .env
+          cp backend/.env.example backend/.env
+          cp ml-service/.env.example ml-service/.env
+          cp frontend/.env.example frontend/.env
+
+      - name: Validate 6-Service docker-compose.yml Specification
+        run: docker compose config --quiet
+
+  # ============================================================================
+  # JOB 5: CONTINUOUS DEPLOYMENT (CD) GATE FOR RENDER & VERCEL
+  # ============================================================================
+  cd-deploy:
+    name: "CD: Production Deployment Gate (Render & Vercel)"
+    needs: [frontend-ci, backend-ci, ml-service-ci, docker-compose-ci]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render & Vercel Production Deploy Hooks (If Configured)
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+          RENDER_ML_DEPLOY_HOOK: ${{ secrets.RENDER_ML_DEPLOY_HOOK }}
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          echo "All 4 CI verification suites passed!"
+          if [ -n "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "Triggering Render Backend deployment..."
+            curl -fsS -X POST "$RENDER_BACKEND_DEPLOY_HOOK"
+          else
+            echo "RENDER_BACKEND_DEPLOY_HOOK not set — relying on Render GitHub Auto-Deploy."
+          fi
+
+          if [ -n "$RENDER_ML_DEPLOY_HOOK" ]; then
+            echo "Triggering Render ML-Service deployment..."
+            curl -fsS -X POST "$RENDER_ML_DEPLOY_HOOK"
+          else
+            echo "RENDER_ML_DEPLOY_HOOK not set — relying on Render GitHub Auto-Deploy."
+          fi
+
+          if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
+            echo "Triggering Vercel Frontend deployment..."
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
+          else
+            echo "VERCEL_DEPLOY_HOOK not set — relying on Vercel GitHub Auto-Deploy."
+          fi
