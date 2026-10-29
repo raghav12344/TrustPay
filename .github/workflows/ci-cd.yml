@@ -36,7 +36,7 @@ jobs:
 
       - name: Build Production Vite Bundle
         env:
-          VITE_API_URL: https://trustpay-backend-service.onrender.com/api
+          VITE_API_URL: https://trustpay-dibb.onrender.com/api
         run: npm run build
 
   # ============================================================================

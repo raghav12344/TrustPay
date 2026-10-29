@@ -15,19 +15,25 @@ jobs:
       - name: "1. Wake Backend Gateway + Redis + RabbitMQ + Aiven MySQL (/api/health)"
         run: |
           echo "Pinging Backend Gateway, Redis, RabbitMQ & MySQL..."
-          curl -fsS --max-time 60 https://trustpay-backend-service.onrender.com/api/health || true
+          curl -fsS --max-time 60 https://trustpay-dibb.onrender.com/api/health || true
           echo ""
 
       - name: "2. Verify Aiven MySQL Direct Query (/api/db-test)"
         run: |
           echo "Verifying Aiven MySQL active query..."
-          curl -fsS --max-time 60 https://trustpay-backend-service.onrender.com/api/db-test || true
+          curl -fsS --max-time 60 https://trustpay-dibb.onrender.com/api/db-test || true
           echo ""
 
       - name: "3. Wake Sentinel FastAPI ML Worker & MySQL Pool (/ & /health)"
         run: |
           echo "Pinging FastAPI ML Service..."
-          curl -fsS --max-time 60 https://trustpay-0h4e.onrender.com/ || true
+          curl -fsS --max-time 60 https://trustpay-ml-service.onrender.com/ || true
           echo ""
-          curl -fsS --max-time 60 https://trustpay-0h4e.onrender.com/health || true
+          curl -fsS --max-time 60 https://trustpay-ml-service.onrender.com/health || true
+          echo ""
+
+      - name: "4. Ping Vercel Frontend Edge (trust-pay-alpha.vercel.app)"
+        run: |
+          echo "Pinging Vercel Frontend..."
+          curl -fsS --max-time 60 https://trust-pay-alpha.vercel.app || true
           echo ""

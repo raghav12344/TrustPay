@@ -79,7 +79,7 @@ const PORT = process.env.PORT || 5000;
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 const PUBLIC_BACKEND_URL =
     process.env.RENDER_EXTERNAL_URL ||
-    "https://trustpay-backend-service.onrender.com";
+    "https://trustpay-dibb.onrender.com";
 
 const runOmnichannelKeepAlive = async () => {
     try {
