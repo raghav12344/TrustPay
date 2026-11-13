@@ -1,24 +1,39 @@
 :root {
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Geist", system-ui, -apple-system, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
 
-  /* Primary Palette */
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
+  /* Apple & TrustPay High-Precision Palette (Light Mode Default) */
+  --primary: #0071E3;
+  --primary-hover: #0077ED;
   --primary-light: #EFF6FF;
-  --primary-glow: rgba(37, 99, 235, 0.15);
+  --primary-glow: rgba(0, 113, 227, 0.18);
 
-  /* Neutrals (Light Mode) */
-  --bg-main: #F8FAFC;
-  --bg-card: #FFFFFF;
-  --bg-card-subtle: #F1F5F9;
+  --apple-blue: #0071E3;
+  --apple-blue-hover: #0077ED;
+  --apple-cyan: #0284C7;
+  --apple-indigo: #4F46E5;
+  --apple-emerald: #16A34A;
+  --apple-amber: #D97706;
+  --apple-ruby: #DC2626;
+
+  /* Surfaces & Backgrounds */
+  --bg-main: #FBFBFD;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --bg-card-solid: #FFFFFF;
+  --bg-card-subtle: #F5F5F7;
   --bg-input: #FFFFFF;
-  --text-primary: #0F172A;
-  --text-secondary: #64748B;
-  --text-muted: #94A3B8;
-  --border-color: #E2E8F0;
-  --border-focus: #3B82F6;
-  --divider: #F1F5F9;
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-muted: #86868B;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-focus: #0071E3;
+  --border-highlight: rgba(0, 0, 0, 0.14);
+  --divider: rgba(0, 0, 0, 0.06);
+
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-blur: blur(24px) saturate(180%);
 
   /* Deep Navy Accent */
   --navy: #0F172A;
@@ -41,64 +56,91 @@
   --color-critical-bg: #FFE4E6;
   --color-critical-border: #FECDD3;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.03);
-  --shadow-xl: 0 20px 35px -5px rgba(15, 23, 42, 0.12), 0 10px 15px -5px rgba(15, 23, 42, 0.05);
+  /* Apple Diffuse Multi-Stop Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 20px 40px -8px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 32px 64px -12px rgba(0, 0, 0, 0.12), 0 12px 24px -6px rgba(0, 0, 0, 0.04);
 
   /* Radii */
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
   --radius-full: 9999px;
 
   /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-normal: 200ms ease;
-  --transition-smooth: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-spring: 450ms cubic-bezier(0.175, 0.885, 0.32, 1.15);
 }
 
+/* ==============================================================================
+   APPLE DARK MODE: OBSIDIAN TITANIUM SYSTEM
+   ============================================================================== */
 [data-theme="dark"] {
-  --bg-main: #020617;
-  --bg-card: #0F172A;
-  --bg-card-subtle: #1E293B;
-  --bg-input: #1E293B;
+  --bg-main: #000000;
+  --bg-card: rgba(18, 22, 33, 0.72);
+  --bg-card-solid: #0A0D14;
+  --bg-card-subtle: rgba(30, 41, 59, 0.55);
+  --bg-input: rgba(15, 23, 42, 0.75);
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
-  --border-color: #1E293B;
-  --border-focus: #60A5FA;
-  --divider: #1E293B;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-focus: #38BDF8;
+  --border-highlight: rgba(255, 255, 255, 0.16);
+  --divider: rgba(255, 255, 255, 0.06);
 
-  --navy: #020617;
-  --navy-surface: #0F172A;
+  --glass-bg: rgba(10, 14, 23, 0.76);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-blur: blur(28px) saturate(190%);
 
-  --primary-light: rgba(37, 99, 235, 0.18);
-  --primary-glow: rgba(59, 130, 246, 0.25);
+  --primary: #38BDF8;
+  --primary-hover: #0EA5E9;
+  --primary-light: rgba(56, 189, 248, 0.15);
+  --primary-glow: rgba(56, 189, 248, 0.25);
 
-  --color-success-bg: rgba(22, 163, 74, 0.15);
-  --color-success-border: rgba(22, 163, 74, 0.3);
+  --apple-blue: #38BDF8;
+  --apple-blue-hover: #0EA5E9;
+  --apple-cyan: #38BDF8;
+  --apple-indigo: #818CF8;
+  --apple-emerald: #34D399;
+  --apple-amber: #FBBF24;
+  --apple-ruby: #F87171;
 
-  --color-warning: #F59E0B;
-  --color-warning-bg: rgba(245, 158, 11, 0.15);
-  --color-warning-border: rgba(245, 158, 11, 0.3);
+  --navy: #000000;
+  --navy-surface: #0B0F19;
 
-  --color-danger-bg: rgba(220, 38, 38, 0.15);
-  --color-danger-border: rgba(220, 38, 38, 0.3);
+  --color-success: #34D399;
+  --color-success-bg: rgba(16, 185, 129, 0.14);
+  --color-success-border: rgba(16, 185, 129, 0.28);
 
-  --color-critical-bg: rgba(153, 27, 27, 0.2);
-  --color-critical-border: rgba(153, 27, 27, 0.4);
+  --color-warning: #FBBF24;
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-warning-border: rgba(245, 158, 11, 0.28);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.6);
+  --color-danger: #F87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-danger-border: rgba(239, 68, 68, 0.3);
+
+  --color-critical: #FDA4AF;
+  --color-critical-bg: rgba(225, 29, 72, 0.18);
+  --color-critical-border: rgba(225, 29, 72, 0.35);
+
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 12px 30px -4px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 50px -10px rgba(0, 0, 0, 0.75);
+  --shadow-xl: 0 36px 80px -15px rgba(0, 0, 0, 0.85);
 }
 
-/* Base Styles */
+/* ==============================================================================
+   BASE RESET & TYPOGRAPHY
+   ============================================================================== */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -114,6 +156,7 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #root {
@@ -122,27 +165,29 @@ html, body {
   flex-direction: column;
 }
 
-/* Typography Hierarchy */
+/* Apple Typography Hierarchy */
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
   color: var(--text-primary);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.18;
 }
 
-h1 { font-size: 28px; font-weight: 700; }
-h2 { font-size: 22px; }
-h3 { font-size: 18px; }
-h4 { font-size: 16px; }
+h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; }
+h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.025em; }
+h3 { font-size: 19px; font-weight: 600; }
+h4 { font-size: 16px; font-weight: 600; }
 
 p {
   color: var(--text-secondary);
+  line-height: 1.58;
 }
 
 a {
   color: var(--primary);
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 a:hover {
@@ -152,54 +197,107 @@ a:hover {
 code {
   font-family: var(--font-mono);
   font-size: 13px;
-  padding: 2px 6px;
+  padding: 3px 7px;
   border-radius: var(--radius-sm);
   background: var(--bg-card-subtle);
   color: var(--primary);
+  border: 1px solid var(--border-color);
 }
 
-/* Layout Utilities */
-.app-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: var(--bg-main);
+/* Apple Typography Display Utilities */
+.apple-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--apple-cyan);
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 100vh;
-  overflow-x: hidden;
+.apple-headline {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5.2vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  color: var(--text-primary);
+  margin-bottom: 18px;
 }
 
-.page-body {
-  flex: 1;
-  padding: 24px 32px 48px;
-  max-width: 1400px;
-  width: 100%;
+.apple-subheadline {
+  font-size: clamp(16px, 1.8vw, 20px);
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 680px;
   margin: 0 auto;
+  letter-spacing: -0.01em;
 }
 
-@media (max-width: 768px) {
-  .page-body {
-    padding: 16px 16px 80px;
-  }
+/* Apple High-Contrast Text Gradients */
+.text-gradient-apple {
+  background: linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Clean Cards */
+[data-theme="light"] .text-gradient-apple {
+  background: linear-gradient(180deg, #0F172A 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #38BDF8 0%, #818CF8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==============================================================================
+   APPLE GLASS SURFACE & CARD SYSTEM
+   ============================================================================== */
+.apple-glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: 28px;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .apple-glass-card {
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.apple-glass-card:hover {
+  border-color: var(--border-highlight);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
 .card {
   background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 24px;
-  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal), transform var(--transition-normal);
+}
+
+[data-theme="dark"] .card {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .card:hover {
-  border-color: rgba(37, 99, 235, 0.25);
+  border-color: rgba(56, 189, 248, 0.25);
   box-shadow: var(--shadow-md);
 }
 
@@ -223,7 +321,9 @@ code {
   margin-top: 2px;
 }
 
-/* Button System */
+/* ==============================================================================
+   APPLE BUTTON SYSTEM
+   ============================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -231,45 +331,63 @@ code {
   gap: 8px;
   font-family: var(--font-sans);
   font-size: 14px;
-  font-weight: 500;
-  padding: 9px 18px;
-  border-radius: var(--radius-md);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
   border: 1px solid transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
   outline: none;
   text-decoration: none;
+  user-select: none;
 }
 
 .btn:focus-visible {
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-.btn-primary {
-  background-color: var(--primary);
-  color: #FFFFFF;
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
-.btn-primary:hover:not(:disabled) {
+/* Apple Primary Solid Pill */
+.btn-primary, .btn-apple-primary {
+  background: #0071E3;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 113, 227, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .btn-primary, [data-theme="dark"] .btn-apple-primary {
+  background: #FFFFFF;
+  color: #000000 !important;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary:hover:not(:disabled), .btn-apple-primary:hover:not(:disabled) {
   background-color: var(--primary-hover);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
+  transform: scale(1.02);
+  filter: brightness(1.05);
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+[data-theme="dark"] .btn-primary:hover:not(:disabled), [data-theme="dark"] .btn-apple-primary:hover:not(:disabled) {
+  background-color: #F1F5F9;
+  transform: scale(1.02);
 }
 
-.btn-secondary {
-  background-color: var(--bg-card);
+/* Apple Secondary Translucent Glass Pill */
+.btn-secondary, .btn-apple-secondary {
+  background-color: var(--bg-card-subtle);
   border-color: var(--border-color);
   color: var(--text-primary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--bg-card-subtle);
-  border-color: var(--text-muted);
+.btn-secondary:hover:not(:disabled), .btn-apple-secondary:hover:not(:disabled) {
+  background-color: var(--bg-card);
+  border-color: var(--border-highlight);
+  transform: scale(1.02);
 }
 
 .btn-danger {
@@ -279,6 +397,7 @@ code {
 
 .btn-danger:hover:not(:disabled) {
   background-color: #B91C1C;
+  transform: scale(1.02);
 }
 
 .btn-success {
@@ -288,6 +407,7 @@ code {
 
 .btn-success:hover:not(:disabled) {
   background-color: #15803D;
+  transform: scale(1.02);
 }
 
 .btn-ghost {
@@ -301,25 +421,27 @@ code {
 }
 
 .btn-sm {
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 13px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
 }
 
 .btn-lg {
-  padding: 12px 24px;
+  padding: 13px 28px;
   font-size: 15px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: 700;
+  border-radius: var(--radius-full);
 }
 
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
 }
 
-/* Inputs & Form Elements */
+/* ==============================================================================
+   FORMS & INPUTS (APPLE GLASS CONTROLS)
+   ============================================================================== */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -329,13 +451,14 @@ code {
 
 .form-label {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .form-input, .form-select, .form-textarea {
   width: 100%;
-  padding: 10px 14px;
+  padding: 11px 16px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -343,7 +466,7 @@ code {
   font-size: 14px;
   color: var(--text-primary);
   outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -371,13 +494,17 @@ code {
   margin-top: 2px;
 }
 
-/* Table Design */
+/* ==============================================================================
+   TABLE DESIGN & DATA CONTAINERS
+   ============================================================================== */
 .table-container {
   width: 100%;
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .data-table {
@@ -388,7 +515,7 @@ code {
 }
 
 .data-table th {
-  padding: 12px 18px;
+  padding: 13px 18px;
   background-color: var(--bg-card-subtle);
   color: var(--text-secondary);
   font-weight: 600;
@@ -418,12 +545,14 @@ code {
   border-bottom: none;
 }
 
-/* Badges */
+/* ==============================================================================
+   BADGES & TELEMETRY PILLS
+   ============================================================================== */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
+  gap: 6px;
+  padding: 4px 11px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
@@ -467,7 +596,15 @@ code {
   border: 1px solid var(--border-color);
 }
 
-/* Skeleton Loading */
+.badge-info {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* ==============================================================================
+   ANIMATIONS & PERFORMANCE HELPERS
+   ============================================================================== */
 .skeleton {
   background: linear-gradient(90deg, var(--bg-card-subtle) 25%, var(--border-color) 50%, var(--bg-card-subtle) 75%);
   background-size: 200% 100%;
@@ -481,7 +618,6 @@ code {
   100% { background-position: -200% 0; }
 }
 
-/* Animations (GPU-Accelerated for Chrome/Blink) */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -495,12 +631,12 @@ code {
 }
 
 @keyframes fadeIn {
-  0% { opacity: 0; transform: translate3d(0, 4px, 0); }
+  0% { opacity: 0; transform: translate3d(0, 6px, 0); }
   100% { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 .animate-fade-in {
-  animation: fadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: opacity, transform;
 }
 
@@ -513,16 +649,10 @@ code {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
-/* PhonePe-Style Payment Processing & Completion Animations */
+/* Payment Animations */
 @keyframes phonepeRipple {
-  0% {
-    transform: scale(0.85);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(1.75);
-    opacity: 0;
-  }
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.75); opacity: 0; }
 }
 
 .phonepe-ripple-1 {
@@ -536,18 +666,9 @@ code {
 }
 
 @keyframes phonepeCheckPop {
-  0% {
-    transform: scale(0.4);
-    opacity: 0;
-  }
-  65% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0% { transform: scale(0.4); opacity: 0; }
+  65% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 .phonepe-check-pop {
@@ -556,25 +677,14 @@ code {
 }
 
 @keyframes phonepeStrokeDraw {
-  0% {
-    stroke-dashoffset: 60;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
+  0% { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 0; }
 }
 
 .phonepe-stroke-draw {
   stroke-dasharray: 60;
   stroke-dashoffset: 60;
   animation: phonepeStrokeDraw 450ms ease-out 120ms forwards;
-}
-
-/* Badge Info (Used for real-time Sentinel AI verification state) */
-.badge-info {
-  background-color: var(--primary-light);
-  color: var(--primary);
-  border: 1px solid rgba(37, 99, 235, 0.3);
 }
 
 /* Custom Scrollbars */
@@ -596,7 +706,32 @@ code {
   background: var(--text-secondary);
 }
 
-/* Responsive Table vs Cards (Mobile Usability Criterion 6 & 20) */
+/* ==============================================================================
+   RESPONSIVE UTILITIES
+   ============================================================================== */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.page-body {
+  flex: 1;
+  padding: 28px 36px 56px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .desktop-table-view {
   display: block;
 }
@@ -613,14 +748,13 @@ code {
   }
 }
 
-/* Mobile Touch Targets & Responsive Spacing (Criteria 1, 4, 7, 13, 20) */
 @media (max-width: 640px) {
   .page-body {
-    padding: 14px 12px 76px !important;
+    padding: 16px 14px 80px !important;
   }
-  .card {
-    padding: 16px !important;
-    border-radius: var(--radius-md) !important;
+  .card, .apple-glass-card {
+    padding: 18px !important;
+    border-radius: var(--radius-lg) !important;
   }
   .card-header {
     margin-bottom: 14px;
@@ -630,16 +764,9 @@ code {
     font-size: 16px;
   }
   .btn {
-    min-height: 42px;
+    min-height: 44px;
   }
   .btn-sm {
-    min-height: 36px;
-  }
-  .modal-cta-group {
-    flex-direction: column !important;
-  }
-  .modal-cta-group .btn {
-    width: 100% !important;
+    min-height: 38px;
   }
 }
-
