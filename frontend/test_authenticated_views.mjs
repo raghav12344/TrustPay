@@ -5,7 +5,7 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const SCRATCH_DIR = 'C:\\Users\\Raghav\\.gemini\\antigravity\\brain\\224397e1-04e0-47d5-9173-e21933d091f6\\scratch';
 
 async function main() {
-  console.log('Testing Authenticated Views with Exact Endpoint Interception...');
+  console.log('Testing Authenticated Views with Full CORS Preflight Support...');
   const browser = await puppeteer.launch({
     executablePath: CHROME_PATH,
     headless: true,
@@ -16,32 +16,35 @@ async function main() {
   await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 2 });
   await page.setRequestInterception(true);
 
-  // Exact Endpoint Mocking so no 401 redirect ever occurs
+  page.on('console', (msg) => console.log('PAGE:', msg.text()));
+
   page.on('request', (req) => {
     const url = req.url();
     const method = req.method();
 
-    if (url.includes('/accounts/me')) {
+    // Universal CORS Preflight Handling
+    if (method === 'OPTIONS') {
       req.respond({
         status: 200,
-        contentType: 'application/json',
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({
-          success: true,
-          account: {
-            accountId: 101,
-            accountNumber: '429188472910',
-            accountType: 'Savings',
-            balance: 148520.5,
-            status: 'ACTIVE',
-          },
-        }),
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, *',
+        },
       });
-    } else if (url.includes('/transactions/admin/fraud-alerts')) {
+      return;
+    }
+
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': '*',
+    };
+
+    if (url.includes('/transactions/admin/fraud-alerts')) {
       req.respond({
         status: 200,
         contentType: 'application/json',
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers,
         body: JSON.stringify({
           success: true,
           alerts: [
@@ -84,11 +87,27 @@ async function main() {
           ],
         }),
       });
-    } else if (url.includes('/transactions') && method === 'GET') {
+    } else if (url.includes('/accounts/me')) {
       req.respond({
         status: 200,
         contentType: 'application/json',
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers,
+        body: JSON.stringify({
+          success: true,
+          account: {
+            accountId: 101,
+            accountNumber: '429188472910',
+            accountType: 'Savings',
+            balance: 148520.5,
+            status: 'ACTIVE',
+          },
+        }),
+      });
+    } else if (url.endsWith('/transactions') && method === 'GET') {
+      req.respond({
+        status: 200,
+        contentType: 'application/json',
+        headers,
         body: JSON.stringify({
           success: true,
           transactions: [
@@ -110,15 +129,6 @@ async function main() {
               transaction_time: new Date(Date.now() - 3600000).toISOString(),
               risk_level: 'HIGH_RISK',
             },
-            {
-              transaction_id: 89419,
-              amount: 1200.0,
-              merchant: 'Swiggy Gourmet Express',
-              transaction_type: 'PAYMENT',
-              status: 'APPROVED',
-              transaction_time: new Date(Date.now() - 7200000).toISOString(),
-              risk_level: 'LOW_RISK',
-            },
           ],
         }),
       });
@@ -126,8 +136,8 @@ async function main() {
       req.respond({
         status: 200,
         contentType: 'application/json',
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ status: 'UP', service: 'trustpay-gateway' }),
+        headers,
+        body: JSON.stringify({ status: 'OK', service: 'trustpay-gateway' }),
       });
     } else {
       req.continue();
@@ -151,16 +161,14 @@ async function main() {
 
   console.log('Navigating to Customer Dashboard...');
   await page.goto('http://127.0.0.1:5173/dashboard', { waitUntil: 'networkidle0' });
-  console.log('Current URL:', page.url());
-  await new Promise((r) => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 600));
   await page.screenshot({ path: path.join(SCRATCH_DIR, 'screen_customer_dashboard.png') });
   console.log('Saved screen_customer_dashboard.png');
 
-  // Customer Make Transfer
+  // Customer Transfer
   console.log('Navigating to Customer Transfer...');
   await page.goto('http://127.0.0.1:5173/make-transaction', { waitUntil: 'networkidle0' });
-  console.log('Current URL:', page.url());
-  await new Promise((r) => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 600));
   await page.screenshot({ path: path.join(SCRATCH_DIR, 'screen_customer_transfer.png') });
   console.log('Saved screen_customer_transfer.png');
 
@@ -180,16 +188,14 @@ async function main() {
 
   console.log('Navigating to Admin Dashboard...');
   await page.goto('http://127.0.0.1:5173/admin', { waitUntil: 'networkidle0' });
-  console.log('Current URL:', page.url());
-  await new Promise((r) => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 600));
   await page.screenshot({ path: path.join(SCRATCH_DIR, 'screen_admin_dashboard.png') });
   console.log('Saved screen_admin_dashboard.png');
 
   // Admin Fraud Alerts Queue
   console.log('Navigating to Admin Fraud Alerts...');
   await page.goto('http://127.0.0.1:5173/admin/fraud-alerts', { waitUntil: 'networkidle0' });
-  console.log('Current URL:', page.url());
-  await new Promise((r) => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 600));
   await page.screenshot({ path: path.join(SCRATCH_DIR, 'screen_admin_fraud_alerts.png') });
   console.log('Saved screen_admin_fraud_alerts.png');
 

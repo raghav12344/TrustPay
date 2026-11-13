@@ -4,7 +4,6 @@ import accountService from '../../services/accountService';
 import transactionService from '../../services/transactionService';
 import { formatINR } from '../../utils/formatting';
 import { useToast } from '../../context/ToastContext';
-import StatusBadge from '../../components/StatusBadge';
 import RiskBadge from '../../components/RiskBadge';
 import {
   Send,
@@ -13,16 +12,11 @@ import {
   ShieldAlert,
   ShieldCheck,
   Clock,
-  ArrowRight,
   Loader2,
   CreditCard,
   Building,
-  Lock,
   Copy,
   Check,
-  Sparkles,
-  ArrowUpRight,
-  Wallet,
   Zap,
 } from 'lucide-react';
 

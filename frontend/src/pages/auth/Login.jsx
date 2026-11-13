@@ -17,7 +17,6 @@ import {
   Moon,
   ArrowLeft,
   UserCheck,
-  Zap,
 } from 'lucide-react';
 
 export const Login = () => {

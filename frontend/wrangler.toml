@@ -1,0 +1,6 @@
+name = "trustpay-frontend"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "./dist"
+
+[vars]
+VITE_API_URL = "https://trustpay-dibb.onrender.com/api"

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { RotateCw, Shield, Zap, Sparkles, RefreshCw, Eye } from 'lucide-react';
+import { RotateCw, Shield, Zap, Sparkles, RefreshCw } from 'lucide-react';
 
 /**
  * TrustPayHero3D — Apple-Grade Interactive 3D WebGL Titanium Card & Cryptographic Shield
@@ -25,7 +25,6 @@ export const TrustPayHero3D = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [is3DSupported, setIs3DSupported] = useState(true);
-  const [coreMode, setCoreMode] = useState('shield'); // 'shield' | 'quantum' | 'orbit'
 
   // Refs for animation & Three.js state
   const stateRef = useRef({
@@ -354,6 +353,7 @@ export const TrustPayHero3D = ({
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
+    const state = stateRef.current;
 
     // Check WebGL availability
     try {
@@ -645,15 +645,11 @@ export const TrustPayHero3D = ({
     window.addEventListener('resize', handleResize);
 
     // 11. 60-120 FPS Buttery Animation Loop with High-Precision Performance Timer
-    let lastTime = performance.now();
-
     const animate = (currentTime = performance.now()) => {
       stateRef.current.animId = requestAnimationFrame(animate);
 
       if (!stateRef.current.isVisible) return;
 
-      const delta = Math.min((currentTime - lastTime) * 0.001, 0.1);
-      lastTime = currentTime;
       const elapsed = currentTime * 0.001;
 
       const {
@@ -735,7 +731,7 @@ export const TrustPayHero3D = ({
 
     // 12. Complete Cleanup Function
     return () => {
-      if (stateRef.current.animId) cancelAnimationFrame(stateRef.current.animId);
+      if (state.animId) cancelAnimationFrame(state.animId);
       observer.disconnect();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('pointerup', handlePointerUp);
@@ -809,8 +805,12 @@ export const TrustPayHero3D = ({
       {/* Floating Apple-Style Glass Control Pill */}
       {is3DSupported && (
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-full shadow-2xl transition-all duration-300 pointer-events-auto"
+          className="flex items-center gap-2 px-3 py-2 rounded-full shadow-2xl transition-all duration-300 pointer-events-auto"
           style={{
+            position: 'absolute',
+            bottom: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
             background: 'rgba(15, 23, 42, 0.72)',
             backdropFilter: 'blur(20px) saturate(180%)',
             border: '1px solid rgba(255, 255, 255, 0.12)',

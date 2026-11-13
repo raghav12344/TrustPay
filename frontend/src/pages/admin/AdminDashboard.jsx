@@ -23,9 +23,6 @@ import {
   Check,
   X,
   PlusCircle,
-  Activity,
-  Layers,
-  Search,
 } from 'lucide-react';
 
 export const AdminDashboard = () => {

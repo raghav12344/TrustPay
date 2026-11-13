@@ -22,9 +22,7 @@ import {
   Eye,
   EyeOff,
   Wifi,
-  Sparkles,
   ArrowUpRight,
-  PlusCircle,
   Copy,
   Check,
 } from 'lucide-react';

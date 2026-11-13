@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Menu, Sun, Moon, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Menu, Sun, Moon } from 'lucide-react';
 
 export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
   const { user, role } = useAuth();
@@ -20,76 +20,133 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
 
   return (
     <header
-      className="sticky top-0 z-30 h-17 px-6 flex items-center justify-between border-b transition-colors duration-200"
       style={{
+        height: '64px',
+        padding: '0 28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
         backgroundColor: 'var(--glass-bg)',
         backdropFilter: 'var(--glass-blur)',
         WebkitBackdropFilter: 'var(--glass-blur)',
-        borderColor: 'var(--border-color)',
+        borderBottom: '1px solid var(--border-color)',
+        transition: 'background-color 0.2s ease',
       }}
     >
       {/* Left: Mobile Toggle & Page Title */}
-      <div className="flex items-center gap-3.5">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <button
           type="button"
           onClick={onOpenSidebar}
-          className="btn-ghost p-2 rounded-xl border border-[var(--border-color)] flex lg:hidden items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          style={{
+            background: 'var(--bg-card-subtle)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            padding: '7px',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          className="lg:hidden"
           aria-label="Toggle navigation menu"
         >
-          <Menu size={19} />
+          <Menu size={18} />
         </button>
 
-        <div>
-          <h2 className="text-lg md:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-            {title}
-          </h2>
-        </div>
+        <h2
+          style={{
+            fontSize: '18px',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: 'var(--text-primary)',
+          }}
+        >
+          {title}
+        </h2>
       </div>
 
       {/* Right: Actions & User Info */}
-      <div className="flex items-center gap-3">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* Theme Toggle */}
         <button
           type="button"
           onClick={toggleTheme}
-          className="w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200"
           style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid var(--border-color)',
             backgroundColor: 'var(--bg-card-subtle)',
-            borderColor: 'var(--border-color)',
             color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
         {/* User Pill */}
         <div
-          className="flex items-center gap-2.5 py-1 px-2.5 rounded-full border shadow-sm transition-all"
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '4px 12px 4px 6px',
+            borderRadius: '999px',
             backgroundColor: 'var(--bg-card)',
-            borderColor: 'var(--border-color)',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-xs)',
           }}
         >
           <div
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ${
-              isAdmin
-                ? 'bg-gradient-to-br from-rose-500 to-red-600'
-                : 'bg-gradient-to-br from-blue-500 to-indigo-600'
-            }`}
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '11px',
+              fontWeight: 700,
+              color: '#ffffff',
+              background: isAdmin
+                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                : 'linear-gradient(135deg, #0071E3 0%, #4338ca 100%)',
+            }}
           >
             {getInitials(user?.name)}
           </div>
 
-          <div className="hidden sm:flex flex-col text-left">
-            <span className="text-xs font-bold text-[var(--text-primary)] leading-tight">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                lineHeight: 1.2,
+              }}
+            >
               {user?.name || 'User'}
             </span>
             <span
-              className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                isAdmin ? 'text-rose-500' : 'text-[var(--primary)]'
-              }`}
+              style={{
+                fontSize: '10px',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: isAdmin ? '#ef4444' : 'var(--primary)',
+              }}
             >
               {role || 'CUSTOMER'}
             </span>

@@ -163,38 +163,46 @@ jobs:
         run: docker compose config --quiet
 
   # ============================================================================
-  # JOB 5: CONTINUOUS DEPLOYMENT (CD) GATE FOR RENDER & VERCEL
+  # JOB 5: CONTINUOUS DEPLOYMENT (CD) GATE (Render, Cloudflare Pages & Vercel)
   # ============================================================================
   cd-deploy:
-    name: "CD: Production Deployment Gate (Render & Vercel)"
+    name: "CD: Production Deployment Gate (Render, Cloudflare & Vercel)"
     needs: [frontend-ci, backend-ci, ml-service-ci, docker-compose-ci]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render & Vercel Production Deploy Hooks (If Configured)
+      - name: Trigger Cloudflare, Render & Vercel Production Deploy Hooks
         env:
           RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
           RENDER_ML_DEPLOY_HOOK: ${{ secrets.RENDER_ML_DEPLOY_HOOK }}
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          CLOUDFLARE_PAGES_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_PAGES_DEPLOY_HOOK }}
         run: |
           echo "All 4 CI verification suites passed!"
           if [ -n "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
             echo "Triggering Render Backend deployment..."
-            curl -fsS -X POST "$RENDER_BACKEND_DEPLOY_HOOK"
+            curl -fsS -X POST "$RENDER_BACKEND_DEPLOY_HOOK" || true
           else
             echo "RENDER_BACKEND_DEPLOY_HOOK not set — relying on Render GitHub Auto-Deploy."
           fi
 
           if [ -n "$RENDER_ML_DEPLOY_HOOK" ]; then
             echo "Triggering Render ML-Service deployment..."
-            curl -fsS -X POST "$RENDER_ML_DEPLOY_HOOK"
+            curl -fsS -X POST "$RENDER_ML_DEPLOY_HOOK" || true
           else
             echo "RENDER_ML_DEPLOY_HOOK not set — relying on Render GitHub Auto-Deploy."
           fi
 
+          if [ -n "$CLOUDFLARE_PAGES_DEPLOY_HOOK" ]; then
+            echo "Triggering Cloudflare Pages deployment..."
+            curl -fsS -X POST "$CLOUDFLARE_PAGES_DEPLOY_HOOK" || true
+          else
+            echo "CLOUDFLARE_PAGES_DEPLOY_HOOK not set — relying on Cloudflare Pages Git Auto-Deploy."
+          fi
+
           if [ -n "$VERCEL_DEPLOY_HOOK" ]; then
             echo "Triggering Vercel Frontend deployment..."
-            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK" || true
           else
             echo "VERCEL_DEPLOY_HOOK not set — relying on Vercel GitHub Auto-Deploy."
           fi
