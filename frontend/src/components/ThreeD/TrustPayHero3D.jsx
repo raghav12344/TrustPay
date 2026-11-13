@@ -765,17 +765,14 @@ export const TrustPayHero3D = ({
   return (
     <div
       className={`relative select-none flex flex-col items-center justify-center ${className}`}
-      style={{ minHeight: '520px', width: '100%', perspective: '1200px' }}
+      style={{ minHeight: '560px', width: '100%', perspective: '1200px', position: 'relative' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* 3D WebGL Canvas Container */}
       <div
         ref={mountRef}
-        className={`w-full h-[460px] md:h-[540px] flex items-center justify-center cursor-grab ${
-          isDragging ? 'cursor-grabbing' : ''
-        }`}
-        style={{ touchAction: 'none' }}
+        style={{ width: '100%', height: '540px', touchAction: 'none', cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         onClick={onCardClick}
       />
 
