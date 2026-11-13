@@ -62,92 +62,183 @@ export const Sidebar = ({ isOpen, onClose }) => {
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 40,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+          }}
           aria-hidden="true"
         />
       )}
 
       {/* Sidebar Aside Panel */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 z-50 flex flex-col border-r transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`app-sidebar ${isOpen ? 'open' : ''}`}
         style={{
+          width: '260px',
+          minWidth: '260px',
+          height: '100vh',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          display: 'flex',
+          flexDirection: 'column',
           backgroundColor: 'var(--glass-bg)',
           backdropFilter: 'var(--glass-blur)',
           WebkitBackdropFilter: 'var(--glass-blur)',
-          borderColor: 'var(--border-color)',
+          borderRight: '1px solid var(--border-color)',
+          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
         aria-label="Navigation sidebar"
       >
         {/* Top Logo & Brand Area */}
-        <div className="h-17 px-6 flex items-center justify-between border-b border-[var(--border-color)]">
-          <NavLink to="/" className="flex items-center gap-3 group">
+        <div
+          style={{
+            height: '68px',
+            padding: '0 22px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--border-color)',
+            flexShrink: 0,
+          }}
+        >
+          <NavLink
+            to="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              textDecoration: 'none',
+            }}
+          >
             <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md transition-transform duration-200 group-hover:scale-105 ${
-                isAdmin
-                  ? 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-500/25'
-                  : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25'
-              }`}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: isAdmin
+                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                  : 'linear-gradient(135deg, #0071E3 0%, #4338ca 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: isAdmin
+                  ? '0 4px 12px rgba(239, 68, 68, 0.3)'
+                  : '0 4px 12px rgba(0, 113, 227, 0.3)',
+              }}
             >
               <ShieldCheck size={20} strokeWidth={2.2} />
             </div>
 
-            <div className="flex flex-col text-left">
-              <span className="font-extrabold text-base tracking-tight text-[var(--text-primary)]">
-                TRUST<span className={isAdmin ? 'text-rose-500' : 'text-[var(--primary)]'}>PAY</span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  letterSpacing: '-0.02em',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                TRUST<span style={{ color: isAdmin ? '#ef4444' : 'var(--primary)' }}>PAY</span>
               </span>
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                {isAdmin ? 'Sentinel Cockpit' : 'Personal Banking'}
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                {isAdmin ? 'Security Console' : 'Personal Banking'}
               </span>
             </div>
           </NavLink>
 
-          {/* Mobile Close Button */}
+          {/* Mobile close button */}
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-subtle)]"
-            aria-label="Close navigation sidebar"
+            className="mobile-sidebar-close"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: '8px',
+            }}
+            aria-label="Close sidebar"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Navigation Links Area */}
-        <div className="flex-1 px-3.5 py-6 overflow-y-auto space-y-6">
-          
+        {/* Navigation Items */}
+        <div
+          style={{
+            flex: 1,
+            padding: '20px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+            overflowY: 'auto',
+          }}
+        >
           <div>
-            <div className="px-3 mb-2.5 text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              {isAdmin ? 'Surveillance & Ops' : 'Financial Services'}
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                padding: '0 12px',
+                marginBottom: '8px',
+              }}
+            >
+              {isAdmin ? 'Surveillance Mesh' : 'Financial Services'}
             </div>
 
-            <nav className="space-y-1">
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {links.map((link) => {
                 const Icon = link.icon;
                 return (
                   <NavLink
                     key={link.to}
                     to={link.to}
-                    onClick={() => onClose && onClose()}
-                    end={link.to === '/dashboard' || link.to === '/admin'}
+                    onClick={() => {
+                      if (window.innerWidth < 1024) onClose();
+                    }}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group ${
-                        isActive
-                          ? 'bg-[var(--primary)] text-white shadow-md shadow-blue-500/20'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-subtle)]'
-                      }`
+                      `sidebar-link ${isActive ? 'active' : ''}`
                     }
+                    style={({ isActive }) => ({
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      fontWeight: isActive ? 600 : 500,
+                      textDecoration: 'none',
+                      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      backgroundColor: isActive ? 'var(--bg-card-subtle)' : 'transparent',
+                      border: isActive
+                        ? '1px solid var(--border-color)'
+                        : '1px solid transparent',
+                      transition: 'all 0.15s ease',
+                    })}
                   >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <Icon size={17} strokeWidth={isActive ? 2.4 : 2} />
-                          <span>{link.label}</span>
-                        </div>
-                        {isActive && <ChevronRight size={14} className="opacity-80" />}
-                      </>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Icon size={17} strokeWidth={2} />
+                      <span>{link.label}</span>
+                    </div>
+                    <ChevronRight size={13} style={{ opacity: 0.4 }} />
                   </NavLink>
                 );
               })}
@@ -155,70 +246,145 @@ export const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           <div>
-            <div className="px-3 mb-2.5 text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                padding: '0 12px',
+                marginBottom: '8px',
+              }}
+            >
               Account & Security
             </div>
 
-            <nav className="space-y-1">
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <NavLink
                 to="/profile"
-                onClick={() => onClose && onClose()}
+                onClick={() => {
+                  if (window.innerWidth < 1024) onClose();
+                }}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                    isActive
-                      ? 'bg-[var(--primary)] text-white shadow-md'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-subtle)]'
-                  }`
+                  `sidebar-link ${isActive ? 'active' : ''}`
                 }
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  fontWeight: isActive ? 600 : 500,
+                  textDecoration: 'none',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  backgroundColor: isActive ? 'var(--bg-card-subtle)' : 'transparent',
+                  border: isActive
+                    ? '1px solid var(--border-color)'
+                    : '1px solid transparent',
+                })}
               >
                 <User size={17} />
-                <span>Profile &amp; Device UUID</span>
+                <span>Profile & Device UUID</span>
               </NavLink>
 
               <NavLink
                 to="/"
-                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-subtle)] transition-all"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  color: 'var(--text-secondary)',
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <ExternalLink size={16} />
-                  <span>Public Showcase</span>
-                </div>
+                <ExternalLink size={16} />
+                <span>Public Showcase</span>
               </NavLink>
             </nav>
           </div>
         </div>
 
-        {/* Bottom User Profile & Sign Out Bar */}
-        <div className="p-4 border-t border-[var(--border-color)]">
-          <div className="p-3 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] flex items-center justify-between">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${
-                  isAdmin ? 'bg-rose-600' : 'bg-blue-600'
-                }`}
-              >
-                {(user?.name || 'TP').slice(0, 2).toUpperCase()}
-              </div>
-              <div className="overflow-hidden">
-                <div className="text-xs font-bold text-[var(--text-primary)] truncate">
-                  {user?.name || 'Logged In'}
-                </div>
-                <div className="text-[10px] text-[var(--text-muted)] truncate">
-                  {user?.email || 'authenticated'}
-                </div>
-              </div>
+        {/* Bottom Profile Drawer & Sign Out */}
+        <div
+          style={{
+            padding: '16px',
+            borderTop: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                flexShrink: 0,
+              }}
+            >
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'TP'}
             </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-              title="Sign Out"
-              aria-label="Sign Out"
-            >
-              <LogOut size={16} />
-            </button>
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {user?.name || 'Authorized User'}
+              </div>
+              <div
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {user?.email || 'user@trustpay.internal'}
+              </div>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: '8px',
+              transition: 'color 0.15s ease',
+            }}
+            title="Sign out of account"
+            aria-label="Sign out"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </aside>
     </>
