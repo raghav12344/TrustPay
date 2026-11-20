@@ -14,6 +14,9 @@ import {
   Menu,
   X,
   Zap,
+  CheckCircle2,
+  AlertTriangle,
+  Gauge,
 } from 'lucide-react';
 
 // Static domain metadata (hoisted to avoid re-allocations on render)
@@ -157,8 +160,13 @@ export const LandingPage = () => {
 
     let animId = null;
     let isRunning = true;
-    let width = (canvas.width = window.innerWidth || 1280);
-    let height = (canvas.height = window.innerHeight || 800);
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let width = window.innerWidth || 1280;
+    let height = window.innerHeight || 800;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
 
     const mouse = {
       x: null,
@@ -177,8 +185,12 @@ export const LandingPage = () => {
     };
 
     const handleResize = () => {
-      width = canvas.width = window.innerWidth || 1280;
-      height = canvas.height = window.innerHeight || 800;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth || 1280;
+      height = window.innerHeight || 800;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
@@ -470,7 +482,7 @@ export const LandingPage = () => {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'monospace', fontSize: '11px' }}>
+          <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '12px', fontFamily: 'monospace', fontSize: '11px' }}>
             <span style={{ color: '#94a3b8' }}>
               Neural Canvas: <strong style={{ color: '#38bdf8' }}>60 FPS Active</strong>
             </span>
@@ -652,8 +664,16 @@ export const LandingPage = () => {
                 type="button"
                 aria-label="Toggle navigation menu"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white"
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
+                className="lg:hidden p-2 rounded-lg"
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: theme === 'dark' ? '#f8fafc' : '#0f172a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
                 {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
@@ -712,31 +732,34 @@ export const LandingPage = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '6px 16px',
+                padding: '6px 14px',
                 borderRadius: '999px',
-                backgroundColor: theme === 'dark' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.1)',
-                border: '1px solid rgba(37, 99, 235, 0.3)',
-                color: '#3b82f6',
-                fontSize: '13px',
+                backgroundColor: theme === 'dark' ? 'rgba(37, 99, 235, 0.12)' : 'rgba(37, 99, 235, 0.08)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                color: '#60a5fa',
+                fontSize: '12px',
                 fontWeight: 600,
                 marginBottom: '24px',
+                maxWidth: '92vw',
               }}
             >
-              <Sparkles size={14} color="#38bdf8" />
-              <span>Real-Time Neural Defense • Move mouse to interact with background network</span>
-              <span style={{ color: '#64748b' }}>|</span>
-              <span style={{ color: '#10b981', fontFamily: 'monospace' }}>&lt; 15ms Tree Inference</span>
+              <Sparkles size={14} color="#38bdf8" style={{ flexShrink: 0 }} />
+              <span className="hidden sm:inline">Real-Time Neural Defense • Move mouse to interact with network</span>
+              <span className="sm:hidden">Real-Time Neural Defense</span>
+              <span style={{ color: '#64748b' }}>•</span>
+              <span style={{ color: '#34d399', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>&lt; 15ms Tree Inference</span>
             </div>
 
             {/* Giant Title */}
             <h1
               style={{
-                fontSize: 'clamp(34px, 5.5vw, 64px)',
-                fontWeight: 900,
-                letterSpacing: '-0.03em',
-                lineHeight: 1.1,
+                fontSize: 'clamp(32px, 5vw, 60px)',
+                fontWeight: 800,
+                letterSpacing: '-0.025em',
+                lineHeight: 1.12,
                 maxWidth: '960px',
                 margin: '0 auto 20px',
+                textWrap: 'balance',
               }}
               className="gradient-hero-title"
             >
@@ -1060,23 +1083,65 @@ export const LandingPage = () => {
                     <button
                       type="button"
                       onClick={() => loadPreset('normal')}
-                      style={{ padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', fontWeight: 700, cursor: 'pointer' }}
+                      style={{
+                        padding: '9px 8px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        color: '#34d399',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'background-color var(--duration-hover) var(--ease-hover)',
+                      }}
                     >
-                      ☕ Normal
+                      <CheckCircle2 size={14} color="#34d399" />
+                      <span>Normal</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => loadPreset('travel')}
-                      style={{ padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', fontWeight: 700, cursor: 'pointer' }}
+                      style={{
+                        padding: '9px 8px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#f87171',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'background-color var(--duration-hover) var(--ease-hover)',
+                      }}
                     >
-                      ✈️ Supersonic
+                      <Gauge size={14} color="#f87171" />
+                      <span>Supersonic</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => loadPreset('ato')}
-                      style={{ padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#c084fc', fontWeight: 700, cursor: 'pointer' }}
+                      style={{
+                        padding: '9px 8px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        color: '#c084fc',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'background-color var(--duration-hover) var(--ease-hover)',
+                      }}
                     >
-                      💸 95% ATO
+                      <AlertTriangle size={14} color="#c084fc" />
+                      <span>95% ATO</span>
                     </button>
                   </div>
                 </div>
@@ -1149,7 +1214,7 @@ export const LandingPage = () => {
                             strokeDashoffset={gaugeOffset}
                             strokeLinecap="round"
                             fill="transparent"
-                            style={{ transition: 'stroke-dashoffset 0.3s ease, stroke 0.3s ease' }}
+                            style={{ transition: 'stroke-dashoffset var(--duration-modal) var(--ease-out), stroke var(--duration-modal) var(--ease-out)' }}
                           />
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -1574,7 +1639,7 @@ export const LandingPage = () => {
                   backgroundColor: theme === 'dark' ? 'rgba(8, 14, 28, 0.8)' : 'rgba(255, 255, 255, 0.95)',
                   border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
                   textAlign: 'center',
-                  transition: 'transform 0.2s ease, border-color 0.2s ease',
+                  transition: 'transform var(--duration-normal) var(--ease-out), border-color var(--duration-normal) var(--ease-out)',
                 }}
               >
                 <div

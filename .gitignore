@@ -143,3 +143,10 @@ Desktop.ini
 secrets/
 credentials/
 *.secret
+
+
+# ------------------------------------------
+# AI Agent Skills & Workspaces
+# ------------------------------------------
+.agents/
+.agent/

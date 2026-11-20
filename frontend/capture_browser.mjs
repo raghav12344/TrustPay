@@ -40,6 +40,13 @@ async function main() {
   await page.screenshot({ path: path.join(SCRATCH_DIR, 'browser_desktop_full.png'), fullPage: true });
   console.log('Captured browser_desktop_hero.png and browser_desktop_full.png');
 
+  // Element capture: Threat Sandbox
+  const simulatorEl = await page.$('#simulator');
+  if (simulatorEl) {
+    await simulatorEl.screenshot({ path: path.join(SCRATCH_DIR, 'browser_simulator.png') });
+    console.log('Captured browser_simulator.png');
+  }
+
   // 2. Tablet View (768px)
   await page.setViewport({ width: 768, height: 1024, deviceScaleFactor: 2 });
   await new Promise((r) => setTimeout(r, 600));
