@@ -529,7 +529,7 @@ export const MakeTransaction = () => {
                 type="number"
                 step="0.01"
                 min="1"
-                className="form-input"
+                className="form-input tabular-nums"
                 style={{ paddingLeft: '32px', fontSize: '16px', fontWeight: 600 }}
                 placeholder="0.00"
                 value={amount}
@@ -612,6 +612,7 @@ export const MakeTransaction = () => {
               {locationStatus !== 'granted' && (
                 <button
                   type="button"
+                  aria-label="Verify current location coordinates for risk scoring"
                   onClick={handleRequestLocation}
                   disabled={locationStatus === 'requesting' || submitting}
                   className="btn btn-secondary btn-sm"

@@ -50,7 +50,7 @@ export const Modal = ({
       }}
     >
       <div
-        className="card animate-fade-in"
+        className="card animate-modal"
         role="document"
         style={{
           width: '100%',

@@ -237,6 +237,7 @@ export const TransactionTable = ({
 
                       <td style={{ textAlign: 'right' }}>
                         <span
+                          className="tabular-nums"
                           style={{
                             fontWeight: 700,
                             fontSize: '14px',

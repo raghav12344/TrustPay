@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import adminService from '../../services/adminService';
 import { formatINR } from '../../utils/formatting';
@@ -61,20 +61,26 @@ export const AdminDashboard = () => {
     fetchAlerts();
   }, []);
 
-  // Compute real metrics from backend alerts
-  const totalAlerts = alerts.length;
-  const pendingReviews = alerts.filter(
-    (a) => (a.alert_status || 'OPEN').toUpperCase() === 'OPEN'
-  ).length;
-  const highRiskCount = alerts.filter(
-    (a) =>
-      (a.severity || '').toUpperCase() === 'HIGH' ||
-      (a.severity || '').toUpperCase() === 'CRITICAL' ||
-      (a.prediction || '').toUpperCase() === 'HIGH_RISK'
-  ).length;
-  const resolvedCount = alerts.filter(
-    (a) => (a.alert_status || '').toUpperCase() === 'RESOLVED'
-  ).length;
+  // Compute real metrics from backend alerts with single-pass useMemo
+  const { totalAlerts, pendingReviews, highRiskCount, resolvedCount } = useMemo(() => {
+    let pending = 0;
+    let highRisk = 0;
+    let resolved = 0;
+    alerts.forEach((a) => {
+      const status = (a.alert_status || 'OPEN').toUpperCase();
+      const severity = (a.severity || '').toUpperCase();
+      const prediction = (a.prediction || '').toUpperCase();
+      if (status === 'OPEN') pending++;
+      if (status === 'RESOLVED') resolved++;
+      if (severity === 'HIGH' || severity === 'CRITICAL' || prediction === 'HIGH_RISK') highRisk++;
+    });
+    return {
+      totalAlerts: alerts.length,
+      pendingReviews: pending,
+      highRiskCount: highRisk,
+      resolvedCount: resolved,
+    };
+  }, [alerts]);
 
   // Handle Quick Approve / Quick Reject from Dashboard
   const handleOpenReview = (transactionId, action) => {

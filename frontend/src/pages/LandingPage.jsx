@@ -16,6 +16,83 @@ import {
   Zap,
 } from 'lucide-react';
 
+// Static domain metadata (hoisted to avoid re-allocations on render)
+const teamMembers = [
+  {
+    memberNo: 'Member 1',
+    name: 'Raghav Gupta',
+    regNo: '20243226',
+    initials: 'RG',
+    gradient: 'from-blue-500 to-indigo-600',
+  },
+  {
+    memberNo: 'Member 2',
+    name: 'Rishabh Srivastava',
+    regNo: '20243236',
+    initials: 'RS',
+    gradient: 'from-indigo-500 to-purple-600',
+  },
+  {
+    memberNo: 'Member 3',
+    name: 'Rishabh Singh',
+    regNo: '20243235',
+    initials: 'RS',
+    gradient: 'from-purple-500 to-pink-600',
+  },
+  {
+    memberNo: 'Member 4',
+    name: 'Prince Keshari',
+    regNo: '20243218',
+    initials: 'PK',
+    gradient: 'from-cyan-500 to-emerald-600',
+  },
+];
+
+const systemTiers = [
+  {
+    tier: 'Tier 1 • Presentation',
+    name: 'Client Web Portal',
+    tech: 'React 19 • Vite • Design Tokens',
+    desc: 'Responsive Single Page Application capturing high-precision HTML5 geolocation coordinates and persistent hardware UUID hashes.',
+    host: 'Vercel / Cloudflare Edge',
+    color: '#3B82F6',
+  },
+  {
+    tier: 'Tier 2 • API Gateway',
+    name: 'Core Banking Gateway',
+    tech: 'Node.js • Express 5 • JWT',
+    desc: 'Stateless JWT authentication, Nominatim reverse geocoding, balance liquidity pre-gating, and fail-safe async AI dispatch.',
+    host: 'Render Cloud Platform',
+    color: '#06B6D4',
+  },
+  {
+    tier: 'Tier 3 • AI Sentinel',
+    name: 'Sentinel AI Microservice',
+    tech: 'Python 3.13 • FastAPI • LightGBM',
+    desc: '20-dimensional feature engineering, Haversine velocity physics, and Groq Llama 3.3 GenAI contextual explanations.',
+    host: 'Render Microservice Container',
+    color: '#8B5CF6',
+  },
+  {
+    tier: 'Tier 4 • Persistence',
+    name: 'Relational Ledger',
+    tech: 'Aiven MySQL 8 • InnoDB • BCNF',
+    desc: 'Normalized BCNF schema enforcing row-level locking (SELECT ... FOR UPDATE) and atomic stored dispute procedures.',
+    host: 'Aiven Cloud Enterprise MySQL',
+    color: '#10B981',
+  },
+];
+
+const workflowPhases = [
+  { phase: 'Phase 1', title: 'Client Ingestion', desc: 'Browser captures HTML5 GPS coordinates and persistent hardware UUID hash.', color: 'text-blue-400' },
+  { phase: 'Phase 2', title: 'Liquidity Gate', desc: 'Gateway asserts account balance prior to dispatch, preventing wasted AI compute.', color: 'text-cyan-400' },
+  { phase: 'Phase 3', title: 'Ledger Ingress', desc: 'Transaction inserted as PENDING; check trigger validates amount integrity.', color: 'text-indigo-400' },
+  { phase: 'Phase 4', title: 'Dual-AI Inference', desc: 'LightGBM evaluates 20D tensor while Groq Llama 3.3 constructs forensic reasoning.', color: 'text-purple-400' },
+  { phase: 'Phase 5', title: 'Decision Engine', desc: 'Auto-approves (score < 70) or locks transaction into security review (score >= 70).', color: 'text-amber-400' },
+  { phase: 'Phase 6', title: 'Compliance Triage', desc: 'Officer inspects telemetry, calls customer, and records mandatory audit reason.', color: 'text-rose-400' },
+  { phase: 'Phase 7', title: 'Atomic Reconciliation', desc: 'Stored procedure executes row lock (FOR UPDATE), settling customer balance atomically.', color: 'text-emerald-400', wide: true },
+];
+
 export const LandingPage = () => {
   const { isAuthenticated, role } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -304,83 +381,6 @@ export const LandingPage = () => {
     setIsBurst(false);
   };
 
-  // Team members without roles
-  const teamMembers = [
-    {
-      memberNo: 'Member 1',
-      name: 'Raghav Gupta',
-      regNo: '20243226',
-      initials: 'RG',
-      gradient: 'from-blue-500 to-indigo-600',
-    },
-    {
-      memberNo: 'Member 2',
-      name: 'Rishabh Srivastava',
-      regNo: '20243236',
-      initials: 'RS',
-      gradient: 'from-indigo-500 to-purple-600',
-    },
-    {
-      memberNo: 'Member 3',
-      name: 'Rishabh Singh',
-      regNo: '20243235',
-      initials: 'RS',
-      gradient: 'from-purple-500 to-pink-600',
-    },
-    {
-      memberNo: 'Member 4',
-      name: 'Prince Keshari',
-      regNo: '20243218',
-      initials: 'PK',
-      gradient: 'from-cyan-500 to-emerald-600',
-    },
-  ];
-
-  const systemTiers = [
-    {
-      tier: 'Tier 1 • Presentation',
-      name: 'Client Web Portal',
-      tech: 'React 18 • Vite • Tailwind CSS',
-      desc: 'Responsive Single Page Application capturing high-precision HTML5 geolocation coordinates and persistent hardware UUID hashes.',
-      host: 'Vercel / Cloudflare Edge',
-      color: '#3B82F6',
-    },
-    {
-      tier: 'Tier 2 • API Gateway',
-      name: 'Core Banking Gateway',
-      tech: 'Node.js • Express 5 • JWT',
-      desc: 'Stateless JWT authentication, Nominatim reverse geocoding, balance liquidity pre-gating, and fail-safe async AI dispatch.',
-      host: 'Render Cloud Platform',
-      color: '#06B6D4',
-    },
-    {
-      tier: 'Tier 3 • AI Sentinel',
-      name: 'Sentinel AI Microservice',
-      tech: 'Python 3.13 • FastAPI • LightGBM',
-      desc: '20-dimensional feature engineering, Haversine velocity physics, and Groq Llama 3.3 GenAI contextual explanations.',
-      host: 'Render Microservice Container',
-      color: '#8B5CF6',
-    },
-    {
-      tier: 'Tier 4 • Persistence',
-      name: 'Relational Ledger',
-      tech: 'Aiven MySQL 8 • InnoDB • BCNF',
-      desc: 'Normalized BCNF schema enforcing row-level locking (SELECT ... FOR UPDATE) and atomic stored dispute procedures.',
-      host: 'Aiven Cloud Enterprise MySQL',
-      color: '#10B981',
-    },
-  ];
-
-  const workflowPhases = [
-    { phase: 'Phase 1', title: 'Client Ingestion', desc: 'Browser captures HTML5 GPS coordinates and persistent hardware UUID hash.', color: 'text-blue-400' },
-    { phase: 'Phase 2', title: 'Liquidity Gate', desc: 'Gateway asserts account balance prior to dispatch, preventing wasted AI compute.', color: 'text-cyan-400' },
-    { phase: 'Phase 3', title: 'Ledger Ingress', desc: 'Transaction inserted as PENDING; check trigger validates amount integrity.', color: 'text-indigo-400' },
-    { phase: 'Phase 4', title: 'Dual-AI Inference', desc: 'LightGBM evaluates 20D tensor while Groq Llama 3.3 constructs forensic reasoning.', color: 'text-purple-400' },
-    { phase: 'Phase 5', title: 'Decision Engine', desc: 'Auto-approves (score < 70) or locks transaction into security review (score >= 70).', color: 'text-amber-400' },
-    { phase: 'Phase 6', title: 'Compliance Triage', desc: 'Officer inspects telemetry, calls customer, and records mandatory audit reason.', color: 'text-rose-400' },
-    { phase: 'Phase 7', title: 'Atomic Reconciliation', desc: 'Stored procedure executes row lock (FOR UPDATE), settling customer balance atomically.', color: 'text-emerald-400', wide: true },
-  ];
-
   return (
     <div
       style={{
@@ -414,6 +414,9 @@ export const LandingPage = () => {
           inset: 0,
           pointerEvents: 'none',
           overflow: 'hidden',
+          contain: 'strict',
+          width: '100%',
+          maxWidth: '100vw',
           zIndex: 0,
           opacity: theme === 'dark' ? 0.55 : 0.25,
           transform: 'translateZ(0)',
@@ -424,8 +427,8 @@ export const LandingPage = () => {
             position: 'absolute',
             top: '-20%',
             left: '15%',
-            width: '900px',
-            height: '900px',
+            width: 'min(700px, 80vw)',
+            height: 'min(700px, 80vw)',
             background: 'radial-gradient(circle, rgba(37, 99, 235, 0.28) 0%, rgba(37, 99, 235, 0) 70%)',
             borderRadius: '50%',
           }}
@@ -435,8 +438,8 @@ export const LandingPage = () => {
             position: 'absolute',
             top: '25%',
             right: '-15%',
-            width: '850px',
-            height: '850px',
+            width: 'min(650px, 80vw)',
+            height: 'min(650px, 80vw)',
             background: 'radial-gradient(circle, rgba(124, 58, 237, 0.24) 0%, rgba(124, 58, 237, 0) 70%)',
             borderRadius: '50%',
           }}
@@ -634,7 +637,7 @@ export const LandingPage = () => {
                   <ArrowRight size={14} />
                 </button>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '8px' }}>
                   <Link to="/login" className="btn btn-secondary btn-sm">
                     Sign In
                   </Link>
@@ -647,6 +650,7 @@ export const LandingPage = () => {
               {/* Mobile menu button */}
               <button
                 type="button"
+                aria-label="Toggle navigation menu"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white"
                 style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}
@@ -684,6 +688,17 @@ export const LandingPage = () => {
               <a href="#team" onClick={() => setMobileMenuOpen(false)} style={{ fontWeight: 600 }}>
                 Project Team
               </a>
+
+              {!isAuthenticated && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+                    Sign In
+                  </Link>
+                  <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="btn btn-primary btn-sm" style={{ flex: 1 }}>
+                    Register
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </header>
@@ -730,10 +745,11 @@ export const LandingPage = () => {
 
             {/* Narrative Subtitle */}
             <p
+              className="prose-cap"
               style={{
                 fontSize: 'clamp(16px, 2.2vw, 19px)',
                 lineHeight: 1.6,
-                maxWidth: '820px',
+                maxWidth: '65ch',
                 margin: '0 auto 36px',
                 color: theme === 'dark' ? '#cbd5e1' : '#475569',
               }}
@@ -806,7 +822,7 @@ export const LandingPage = () => {
                 <div style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: '#60a5fa', textTransform: 'uppercase' }}>
                   Tree Inference
                 </div>
-                <div style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>&lt; 14.2ms</div>
+                <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>&lt; 14.2ms</div>
                 <div style={{ fontSize: '12px', color: '#94a3b8' }}>LightGBM 20D Feature Pipeline</div>
               </div>
 
@@ -822,7 +838,7 @@ export const LandingPage = () => {
                 <div style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: '#10b981', textTransform: 'uppercase' }}>
                   ACID Concurrency
                 </div>
-                <div style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>100% Locked</div>
+                <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>100% Locked</div>
                 <div style={{ fontSize: '12px', color: '#94a3b8' }}>SELECT ... FOR UPDATE Stored Procs</div>
               </div>
 
@@ -838,7 +854,7 @@ export const LandingPage = () => {
                 <div style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: '#c084fc', textTransform: 'uppercase' }}>
                   Supersonic Gate
                 </div>
-                <div style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>&gt; 800 km/h</div>
+                <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>&gt; 800 km/h</div>
                 <div style={{ fontSize: '12px', color: '#94a3b8' }}>Haversine Great-Circle Trip Flag</div>
               </div>
 
@@ -854,7 +870,7 @@ export const LandingPage = () => {
                 <div style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase' }}>
                   GenAI Reasoning
                 </div>
-                <div style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>Llama 3.3 70B</div>
+                <div className="tabular-nums" style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'monospace', margin: '4px 0' }}>Llama 3.3 70B</div>
                 <div style={{ fontSize: '12px', color: '#94a3b8' }}>Groq Zero-Latency Explanations</div>
               </div>
             </div>
@@ -928,7 +944,7 @@ export const LandingPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontFamily: 'monospace', marginBottom: '8px' }}>
                     <span style={{ color: '#94a3b8' }}>Transaction Amount ($X):</span>
-                    <strong style={{ color: '#10b981', fontSize: '15px' }}>${amount.toLocaleString()}</strong>
+                    <strong className="tabular-nums" style={{ color: '#10b981', fontSize: '15px' }}>${amount.toLocaleString()}</strong>
                   </div>
                   <input
                     type="range"
@@ -945,7 +961,7 @@ export const LandingPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontFamily: 'monospace', marginBottom: '8px' }}>
                     <span style={{ color: '#94a3b8' }}>Spatial Distance (Δd):</span>
-                    <strong style={{ color: '#38bdf8', fontSize: '15px' }}>{distance.toLocaleString()} km</strong>
+                    <strong className="tabular-nums" style={{ color: '#38bdf8', fontSize: '15px' }}>{distance.toLocaleString()} km</strong>
                   </div>
                   <input
                     type="range"
@@ -962,7 +978,7 @@ export const LandingPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontFamily: 'monospace', marginBottom: '8px' }}>
                     <span style={{ color: '#94a3b8' }}>Elapsed Interval (Δt):</span>
-                    <strong style={{ color: '#c084fc', fontSize: '15px' }}>{timeMinutes} mins</strong>
+                    <strong className="tabular-nums" style={{ color: '#c084fc', fontSize: '15px' }}>{timeMinutes} mins</strong>
                   </div>
                   <input
                     type="range"
@@ -979,7 +995,7 @@ export const LandingPage = () => {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontFamily: 'monospace', marginBottom: '8px' }}>
                     <span style={{ color: '#94a3b8' }}>Balance Depletion Ratio:</span>
-                    <strong style={{ color: '#f59e0b', fontSize: '15px' }}>{drain}% Drain</strong>
+                    <strong className="tabular-nums" style={{ color: '#f59e0b', fontSize: '15px' }}>{drain}% Drain</strong>
                   </div>
                   <input
                     type="range"
@@ -1137,7 +1153,7 @@ export const LandingPage = () => {
                           />
                         </svg>
                         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '32px', fontWeight: 900, fontFamily: 'monospace', color: '#ffffff' }}>
+                          <span className="tabular-nums" style={{ fontSize: '32px', fontWeight: 900, fontFamily: 'monospace', color: '#ffffff' }}>
                             {(score < 10 ? '0' : '') + score}
                           </span>
                           <span style={{ fontSize: '9px', textTransform: 'uppercase', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em' }}>
@@ -1181,7 +1197,7 @@ export const LandingPage = () => {
                           <span style={{ fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', display: 'block' }}>
                             Implied Velocity (V = Δd / Δt)
                           </span>
-                          <strong style={{ fontSize: '15px' }}>{Math.round(speedKmh).toLocaleString()} km/h</strong>
+                          <strong className="tabular-nums" style={{ fontSize: '15px' }}>{Math.round(speedKmh).toLocaleString()} km/h</strong>
                         </div>
                         <span
                           style={{
@@ -1396,16 +1412,16 @@ export const LandingPage = () => {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+            <div className="workflow-grid">
               {workflowPhases.map((phase, idx) => (
                 <div
                   key={idx}
+                  className={phase.wide ? 'workflow-grid-wide' : ''}
                   style={{
                     padding: '20px',
                     borderRadius: '16px',
                     backgroundColor: theme === 'dark' ? 'rgba(8, 14, 28, 0.8)' : 'rgba(255, 255, 255, 0.95)',
                     border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
-                    gridColumn: phase.wide ? 'span 2' : 'auto',
                   }}
                 >
                   <span style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase' }} className={phase.color}>

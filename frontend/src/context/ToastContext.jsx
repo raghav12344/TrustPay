@@ -132,6 +132,7 @@ export const ToastProvider = ({ children }) => {
 
               <button
                 type="button"
+                aria-label="Dismiss notification"
                 onClick={() => removeToast(toast.id)}
                 style={{
                   background: 'none',

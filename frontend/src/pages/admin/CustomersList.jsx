@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import adminService from '../../services/adminService';
 import { formatINR } from '../../utils/formatting';
@@ -31,13 +31,16 @@ export const CustomersList = () => {
     fetchCustomers();
   }, []);
 
-  const filtered = customers.filter(
-    (c) =>
-      (c.customerName && c.customerName.toLowerCase().includes(search.toLowerCase())) ||
-      (c.phone && c.phone.includes(search)) ||
-      (c.email && c.email.toLowerCase().includes(search.toLowerCase())) ||
-      (c.accountNumber && c.accountNumber.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return customers.filter(
+      (c) =>
+        (c.customerName && c.customerName.toLowerCase().includes(q)) ||
+        (c.phone && c.phone.includes(search)) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.accountNumber && c.accountNumber.toLowerCase().includes(q))
+    );
+  }, [customers, search]);
 
   const handleOpenCredit = (cust = null) => {
     setSelectedCustomer(cust);

@@ -90,6 +90,7 @@ export const TransactionCard = ({ transaction, onClick }) => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
         <div style={{ textAlign: 'right' }}>
           <div
+            className="tabular-nums"
             style={{
               fontSize: '15px',
               fontWeight: 700,

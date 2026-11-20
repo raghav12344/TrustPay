@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import adminService from '../../services/adminService';
 import { formatINR } from '../../utils/formatting';
@@ -43,19 +43,24 @@ export const AdminAccounts = () => {
     fetchAccounts();
   }, []);
 
-  const filteredAccounts = accounts.filter((acc) => {
+  const filteredAccounts = useMemo(() => {
     const term = search.toLowerCase();
-    return (
-      !term ||
-      (acc.customerName && acc.customerName.toLowerCase().includes(term)) ||
-      (acc.accountNumber && acc.accountNumber.toLowerCase().includes(term)) ||
-      (acc.email && acc.email.toLowerCase().includes(term)) ||
-      (acc.phone && acc.phone.includes(term))
-    );
-  });
+    return accounts.filter((acc) => {
+      return (
+        !term ||
+        (acc.customerName && acc.customerName.toLowerCase().includes(term)) ||
+        (acc.accountNumber && acc.accountNumber.toLowerCase().includes(term)) ||
+        (acc.email && acc.email.toLowerCase().includes(term)) ||
+        (acc.phone && acc.phone.includes(term))
+      );
+    });
+  }, [accounts, search]);
 
-  const totalBalance = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
-  const avgBalance = accounts.length > 0 ? totalBalance / accounts.length : 0;
+  const { totalBalance, avgBalance } = useMemo(() => {
+    const total = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+    const avg = accounts.length > 0 ? total / accounts.length : 0;
+    return { totalBalance: total, avgBalance: avg };
+  }, [accounts]);
 
   const handleOpenCreditModal = (account = null) => {
     setSelectedAccountForCredit(account);

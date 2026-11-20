@@ -55,10 +55,21 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
+  /* Purpose-Driven Easing (Emil Kowalski Motion Design) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-hover: ease;
+
+  --duration-press: 120ms;
+  --duration-hover: 150ms;
+  --duration-normal: 200ms;
+  --duration-modal: 250ms;
+
   /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-normal: 200ms ease;
-  --transition-smooth: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: var(--duration-hover) var(--ease-hover);
+  --transition-normal: var(--duration-normal) var(--ease-out);
+  --transition-smooth: var(--duration-modal) var(--ease-out);
 }
 
 [data-theme="dark"] {
@@ -236,14 +247,25 @@ code {
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background-color var(--duration-hover) var(--ease-hover),
+              border-color var(--duration-hover) var(--ease-hover),
+              color var(--duration-hover) var(--ease-hover),
+              box-shadow var(--duration-hover) var(--ease-hover),
+              transform var(--duration-press) var(--ease-out);
   white-space: nowrap;
   outline: none;
   text-decoration: none;
+  user-select: none;
 }
 
 .btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-primary {
@@ -258,7 +280,7 @@ code {
 }
 
 .btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .btn-secondary {
@@ -642,4 +664,116 @@ code {
     width: 100% !important;
   }
 }
+
+/* ==========================================================================
+   Impeccable & Taste-Skill Typography & Design Tokens
+   ========================================================================== */
+
+/* Reading Line-Length Constraint (~65ch max for optimal comprehension) */
+.prose-cap,
+.body-copy {
+  max-width: 65ch;
+}
+
+/* Numeric & Metric Alignment (Eliminates digit jitter in tables and badges) */
+.tabular-nums,
+[data-tabular],
+.stat-value,
+.metric-value,
+.data-table td,
+.table-container td,
+.amount-cell,
+.risk-score-display {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Universal Keyboard Accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Emil Kowalski Motion Principles (Natural Entrances & Purpose-Driven Easing)
+   ========================================================================== */
+
+/* Natural Scale Modal Entrance (Never scale(0), starts from scale(0.96)) */
+@keyframes modalEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal {
+  animation: modalEnter var(--duration-modal) var(--ease-out) forwards;
+  will-change: opacity, transform;
+}
+
+/* Reduced Motion Override (A11y & Motion Sensitivity) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin,
+  .animate-pulse-glow,
+  .animate-fade-in,
+  .animate-modal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   Layout & Responsive Utilities (Decoupled from Frameworks)
+   ========================================================================== */
+
+.hidden { display: none !important; }
+.flex { display: flex !important; }
+.items-center { align-items: center !important; }
+.justify-between { justify-content: space-between !important; }
+.gap-7 { gap: 28px !important; }
+.gap-6 { gap: 24px !important; }
+.gap-4 { gap: 16px !important; }
+.gap-3 { gap: 12px !important; }
+.gap-2 { gap: 8px !important; }
+
+@media (min-width: 640px) {
+  .sm\:flex { display: flex !important; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:flex { display: flex !important; }
+  .lg\:hidden { display: none !important; }
+}
+
+/* Fluid Responsive Grid Helpers */
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .workflow-grid-wide {
+    grid-column: span 2;
+  }
+}
+
+
 
