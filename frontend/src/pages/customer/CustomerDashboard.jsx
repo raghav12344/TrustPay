@@ -19,12 +19,6 @@ import {
   CreditCard,
   Building,
   RefreshCw,
-  Eye,
-  EyeOff,
-  Wifi,
-  ArrowUpRight,
-  Copy,
-  Check,
 } from 'lucide-react';
 
 export const CustomerDashboard = () => {
@@ -35,8 +29,6 @@ export const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTx, setSelectedTx] = useState(null);
-  const [hideBalance, setHideBalance] = useState(false);
-  const [copiedAccount, setCopiedAccount] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -77,13 +69,6 @@ export const CustomerDashboard = () => {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  const handleCopyAccount = () => {
-    if (!account?.accountNumber) return;
-    navigator.clipboard.writeText(String(account.accountNumber));
-    setCopiedAccount(true);
-    setTimeout(() => setCopiedAccount(false), 2000);
-  };
-
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -104,7 +89,7 @@ export const CustomerDashboard = () => {
 
   return (
     <div>
-      {/* Welcome & Live Telemetry Header */}
+      {/* Welcome Section */}
       <div
         style={{
           display: 'flex',
@@ -116,50 +101,11 @@ export const CustomerDashboard = () => {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '3px 10px',
-                borderRadius: '999px',
-                fontSize: '11px',
-                fontWeight: 600,
-                letterSpacing: '0.04em',
-                background: 'rgba(16, 185, 129, 0.12)',
-                color: '#10b981',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-              }}
-            >
-              <span
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#10b981',
-                  boxShadow: '0 0 8px #10b981',
-                }}
-              />
-              SENTINEL AI ACTIVE
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              MNNIT Distributed Ledger
-            </span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: 'clamp(24px, 3.5vw, 32px)',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              color: 'var(--text-primary)',
-            }}
-          >
+          <h1 style={{ fontSize: '26px', fontWeight: 800 }}>
             {getGreeting()}, {firstName}
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Account overview, continuous fraud surveillance, and real-time ledger telemetry.
+          <p style={{ fontSize: '14px', marginTop: '4px' }}>
+            Here is your financial activity overview and real-time security telemetry.
           </p>
         </div>
 
@@ -171,12 +117,12 @@ export const CustomerDashboard = () => {
             disabled={loading}
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Sync</span>
+            <span>Refresh</span>
           </button>
 
           <Link to="/make-transaction" className="btn btn-primary">
-            <Send size={15} />
-            <span>Send Money</span>
+            <Send size={16} />
+            <span>Make Transaction</span>
           </Link>
         </div>
       </div>
@@ -185,45 +131,30 @@ export const CustomerDashboard = () => {
         <ErrorState message={error} onRetry={fetchData} />
       ) : (
         <>
-          {/* Apple Titanium Card Banner */}
+          {/* Main Account Card Banner */}
           <div
-            className="apple-glass-card"
+            className="card"
             style={{
-              padding: 'clamp(24px, 4vw, 36px)',
+              padding: 'clamp(20px, 4vw, 32px)',
               marginBottom: '28px',
-              background:
-                'linear-gradient(135deg, #0b1120 0%, #0f172a 45%, #1e293b 85%, #1e3a8a 100%)',
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #1D4ED8 100%)',
               color: '#FFFFFF',
-              border: '1px solid rgba(255, 255, 255, 0.14)',
-              boxShadow:
-                '0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+              border: 'none',
+              boxShadow: '0 10px 25px -5px rgba(30, 58, 138, 0.4)',
               position: 'relative',
               overflow: 'hidden',
-              borderRadius: '24px',
             }}
           >
-            {/* Specular Titanium Sheen Accent */}
+            {/* Subtle background decoration */}
             <div
               style={{
                 position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '600px',
-                height: '100%',
-                background:
-                  'radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.18) 0%, rgba(99, 102, 241, 0.08) 45%, transparent 70%)',
-                pointerEvents: 'none',
-              }}
-            />
-
-            {/* Subtle Diagonal Guilloche Hairline Pattern */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                opacity: 0.04,
-                backgroundImage:
-                  'repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 24px)',
+                right: '-30px',
+                top: '-30px',
+                width: '180px',
+                height: '180px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)',
                 pointerEvents: 'none',
               }}
             />
@@ -234,255 +165,102 @@ export const CustomerDashboard = () => {
                 flexWrap: 'wrap',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '28px',
+                gap: '24px',
                 position: 'relative',
                 zIndex: 1,
               }}
             >
-              {/* Left Column: Account Details & Balance */}
-              <div style={{ flex: '1 1 320px', minWidth: '260px' }}>
+              <div>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    marginBottom: '14px',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
-                      borderRadius: '999px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      backdropFilter: 'blur(8px)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      color: '#93C5FD',
-                    }}
-                  >
-                    <Building size={12} />
-                    <span>{account?.accountType || 'Savings'} Account</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleCopyAccount}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#94a3b8',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      fontFamily: 'var(--font-mono)',
-                      padding: '2px 6px',
-                      borderRadius: '6px',
-                      transition: 'color 0.2s',
-                    }}
-                    title="Copy Account Number"
-                  >
-                    <span>{maskAccountNumber(account?.accountNumber)}</span>
-                    {copiedAccount ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
+                    gap: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: '#93C5FD',
                     marginBottom: '8px',
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#94a3b8',
-                      letterSpacing: '0.02em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Available Balance
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => setHideBalance(!hideBalance)}
-                    style={{
-                      background: 'rgba(255,255,255,0.08)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: '999px',
-                      padding: '2px 8px',
-                      color: '#cbd5e1',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                    title={hideBalance ? 'Show Balance' : 'Hide Balance'}
-                  >
-                    {hideBalance ? <Eye size={12} /> : <EyeOff size={12} />}
-                    <span>{hideBalance ? 'Show' : 'Hide'}</span>
-                  </button>
+                  <Building size={14} />
+                  <span>{account?.accountType || 'Savings'} Account</span>
+                  <span>•</span>
+                  <span>{maskAccountNumber(account?.accountNumber)}</span>
                 </div>
 
                 <div
                   style={{
-                    fontSize: 'clamp(32px, 5.5vw, 46px)',
+                    fontSize: '13px',
+                    color: '#CBD5E1',
+                    marginBottom: '6px',
+                  }}
+                >
+                  Available Balance
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 'clamp(26px, 5.5vw, 36px)',
                     fontWeight: 800,
-                    letterSpacing: '-0.03em',
+                    letterSpacing: '-0.02em',
                     lineHeight: 1.1,
-                    fontFeatureSettings: '"tnum"',
-                    color: '#ffffff',
-                    textShadow: '0 2px 10px rgba(0,0,0,0.3)',
                   }}
                 >
                   {loading ? (
                     <div
                       className="skeleton"
                       style={{
-                        width: '220px',
-                        height: '46px',
-                        backgroundColor: 'rgba(255,255,255,0.12)',
-                        borderRadius: '12px',
+                        width: '200px',
+                        height: '42px',
+                        backgroundColor: 'rgba(255,255,255,0.15)',
                       }}
                     />
-                  ) : hideBalance ? (
-                    '••••••••'
                   ) : (
                     formatINR(account?.balance ?? 0)
                   )}
                 </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    marginTop: '16px',
-                    fontSize: '12px',
-                    color: '#cbd5e1',
-                  }}
-                >
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={15} color="#34d399" />
-                    <span>Real-time ML Surveillance</span>
-                  </span>
-                  <span>•</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <Wifi size={13} color="#38bdf8" />
-                    <span>Zero-Knowledge Fast Path</span>
-                  </span>
-                </div>
               </div>
 
-              {/* Right Column: Titanium Mini-Card Visual Preview + Action Pills */}
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
-                  gap: '14px',
+                  gap: '12px',
                 }}
               >
-                {/* Physical Titanium Card Simulation Pill */}
                 <div
                   style={{
-                    padding: '16px 20px',
-                    borderRadius: '18px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(255, 255, 255, 0.16)',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
-                    minWidth: '240px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(4px)',
+                    fontSize: '12px',
+                    fontWeight: 500,
                   }}
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '12px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        letterSpacing: '0.12em',
-                        color: '#38bdf8',
-                      }}
-                    >
-                      TRUSTPAY SENTINEL
-                    </span>
-                    <Wifi size={14} color="#94a3b8" />
-                  </div>
-
-                  {/* EMV Microchip graphic */}
-                  <div
-                    style={{
-                      width: '32px',
-                      height: '24px',
-                      borderRadius: '5px',
-                      background: 'linear-gradient(135deg, #fcd34d 0%, #b45309 100%)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                      boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.4)',
-                      marginBottom: '12px',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '13px',
-                      letterSpacing: '0.15em',
-                      color: '#f8fafc',
-                    }}
-                  >
-                    •••• •••• •••• {account?.accountNumber ? String(account.accountNumber).slice(-4) : '4291'}
-                  </div>
+                  <ShieldCheck size={14} color="#6EE7B7" />
+                  <span>AI Fraud Shield Active</span>
                 </div>
 
-                {/* Primary Quick Action Buttons */}
-                <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                  <Link
-                    to="/make-transaction"
-                    className="btn btn-primary"
-                    style={{
-                      flex: 1,
-                      backgroundColor: '#FFFFFF',
-                      color: '#0F172A !important',
-                      fontWeight: 700,
-                      boxShadow: '0 4px 14px rgba(255,255,255,0.25)',
-                    }}
-                  >
-                    <Send size={15} color="#0F172A" />
-                    <span style={{ color: '#0F172A' }}>Send Money</span>
-                  </Link>
-
-                  <Link
-                    to="/transactions"
-                    className="btn btn-secondary"
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.12)',
-                      borderColor: 'rgba(255,255,255,0.2)',
-                      color: '#ffffff',
-                    }}
-                  >
-                    <span>History</span>
-                    <ArrowUpRight size={14} />
-                  </Link>
-                </div>
+                <Link
+                  to="/make-transaction"
+                  className="btn"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#1D4ED8',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  <Send size={16} />
+                  <span>Send Money</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -498,8 +276,8 @@ export const CustomerDashboard = () => {
           >
             <StatCard
               title="Current Balance"
-              value={hideBalance ? '••••••' : formatINR(account?.balance ?? 0)}
-              subtitle="Primary checking & savings"
+              value={formatINR(account?.balance ?? 0)}
+              subtitle="Primary account"
               icon={Wallet}
               iconBg="var(--primary-light)"
               iconColor="var(--primary)"
@@ -509,7 +287,7 @@ export const CustomerDashboard = () => {
             <StatCard
               title="Total Transactions"
               value={totalTxCount}
-              subtitle="Surveilled by Sentinel AI"
+              subtitle="All historical records"
               icon={CreditCard}
               iconBg="var(--bg-card-subtle)"
               iconColor="var(--navy)"
@@ -517,9 +295,9 @@ export const CustomerDashboard = () => {
             />
 
             <StatCard
-              title="Passed Security"
+              title="Approved Transactions"
               value={approvedTxCount}
-              subtitle="Zero-threat fast path"
+              subtitle="Passed security checks"
               icon={CheckCircle2}
               iconBg="var(--color-success-bg)"
               iconColor="var(--color-success)"
@@ -527,9 +305,9 @@ export const CustomerDashboard = () => {
             />
 
             <StatCard
-              title="Pending Verification"
+              title="Pending Reviews"
               value={pendingTxCount}
-              subtitle={pendingTxCount > 0 ? 'Under security verification' : 'Queue cleared'}
+              subtitle={pendingTxCount > 0 ? 'Under security verification' : 'No active holds'}
               icon={Clock}
               iconBg={pendingTxCount > 0 ? 'var(--color-warning-bg)' : 'var(--bg-card-subtle)'}
               iconColor={pendingTxCount > 0 ? 'var(--color-warning)' : 'var(--text-muted)'}
@@ -538,13 +316,11 @@ export const CustomerDashboard = () => {
           </div>
 
           {/* Recent Transactions Section */}
-          <div className="card" style={{ padding: 'clamp(20px, 3.5vw, 28px)' }}>
+          <div className="card" style={{ padding: '24px' }}>
             <div className="card-header">
               <div>
                 <h2 className="card-title">Recent Transactions</h2>
-                <p className="card-subtitle">
-                  Real-time ledger events and cryptographic evaluation results
-                </p>
+                <p className="card-subtitle">Your latest account movements</p>
               </div>
 
               <Link
@@ -552,7 +328,7 @@ export const CustomerDashboard = () => {
                 className="btn btn-ghost btn-sm"
                 style={{ gap: '6px', fontWeight: 600 }}
               >
-                <span>View all activity</span>
+                <span>View all</span>
                 <ArrowRight size={15} />
               </Link>
             </div>
@@ -583,57 +359,34 @@ export const CustomerDashboard = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '18px',
+                padding: '16px',
                 backgroundColor: 'var(--bg-card-subtle)',
-                borderRadius: '16px',
-                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
               }}
             >
               <div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Amount</div>
-                <div
-                  style={{
-                    fontSize: '26px',
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    letterSpacing: '-0.02em',
-                  }}
-                >
+                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {formatINR(selectedTx.amount)}
                 </div>
               </div>
               <StatusBadge status={selectedTx.status} />
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '14px',
-                fontSize: '13px',
-              }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', fontSize: '13px' }}>
               <div>
-                <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>
-                  Merchant / Counterparty
-                </div>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {selectedTx.merchant || '—'}
-                </div>
+                <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>Merchant / Counterparty</div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedTx.merchant || '—'}</div>
               </div>
 
               <div>
                 <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>Type</div>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {selectedTx.transaction_type}
-                </div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedTx.transaction_type}</div>
               </div>
 
               <div>
                 <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>Account</div>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {selectedTx.account_number || account?.accountNumber || '—'}
-                </div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedTx.account_number || account?.accountNumber || '—'}</div>
               </div>
 
               <div>
@@ -647,21 +400,20 @@ export const CustomerDashboard = () => {
             {selectedTx.status === 'PENDING' && (
               <div
                 style={{
-                  padding: '14px 16px',
+                  padding: '12px 14px',
                   backgroundColor: 'var(--color-warning-bg)',
                   border: '1px solid var(--color-warning-border)',
-                  borderRadius: '14px',
+                  borderRadius: 'var(--radius-md)',
                   fontSize: '13px',
                   color: 'var(--color-warning)',
                   display: 'flex',
                   alignItems: 'flex-start',
-                  gap: '10px',
+                  gap: '8px',
                 }}
               >
                 <Clock size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                  <strong>Under Security Review:</strong> Our monitoring system flagged this
-                  transaction for additional verification. An administrator is reviewing it.
+                  <strong>Under Security Review:</strong> Our monitoring system flagged this transaction for additional verification. An administrator is reviewing it.
                 </div>
               </div>
             )}

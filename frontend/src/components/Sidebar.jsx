@@ -13,12 +13,10 @@ import {
   BarChart3,
   Wallet,
   X,
-  ChevronRight,
-  ExternalLink,
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose }) => {
-  const { role, logout, user } = useAuth();
+  const { role, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,18 +27,18 @@ export const Sidebar = ({ isOpen, onClose }) => {
   const isAdmin = role === 'ADMIN';
 
   const customerLinks = [
-    { to: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { to: '/make-transaction', label: 'Make Transfer', icon: Send },
-    { to: '/transactions', label: 'Transaction Ledger', icon: Receipt },
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/make-transaction', label: 'Make Transaction', icon: Send },
+    { to: '/transactions', label: 'Transactions', icon: Receipt },
   ];
 
   const adminLinks = [
-    { to: '/admin', label: 'Triage Overview', icon: LayoutDashboard },
-    { to: '/admin/fraud-alerts', label: 'Fraud Alerts Queue', icon: ShieldAlert },
-    { to: '/admin/transactions', label: 'Global Ledger', icon: Receipt },
-    { to: '/admin/accounts', label: 'Accounts & Liquidity', icon: Wallet },
-    { to: '/admin/customers', label: 'Customer Directory', icon: Users },
-    { to: '/admin/analytics', label: 'Risk Analytics', icon: BarChart3 },
+    { to: '/admin', label: 'Overview', icon: LayoutDashboard },
+    { to: '/admin/fraud-alerts', label: 'Fraud Alerts', icon: ShieldAlert },
+    { to: '/admin/transactions', label: 'Transactions', icon: Receipt },
+    { to: '/admin/accounts', label: 'Accounts & Balance', icon: Wallet },
+    { to: '/admin/customers', label: 'Customers', icon: Users },
+    { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   const links = isAdmin ? adminLinks : customerLinks;
@@ -58,335 +56,289 @@ export const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
+      {/* Mobile Backdrop */}
       {isOpen && (
         <div
           onClick={onClose}
           style={{
             position: 'fixed',
             inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.5)',
             zIndex: 40,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(4px)',
+            backdropFilter: 'blur(2px)',
           }}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar Aside Panel */}
       <aside
-        className={`app-sidebar ${isOpen ? 'open' : ''}`}
         style={{
           width: '260px',
-          minWidth: '260px',
-          height: '100vh',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
+          backgroundColor: 'var(--bg-card)',
+          borderRight: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--glass-bg)',
-          backdropFilter: 'var(--glass-blur)',
-          WebkitBackdropFilter: 'var(--glass-blur)',
-          borderRight: '1px solid var(--border-color)',
-          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          zIndex: 50,
+          transition: 'transform var(--transition-smooth)',
+          flexShrink: 0,
         }}
+        className={`sidebar ${isOpen ? 'open' : ''}`}
         aria-label="Navigation sidebar"
       >
-        {/* Top Logo & Brand Area */}
+        {/* Logo and Brand */}
         <div
           style={{
-            height: '68px',
-            padding: '0 22px',
+            padding: '24px 20px',
+            borderBottom: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid var(--border-color)',
-            flexShrink: 0,
           }}
         >
-          <NavLink
-            to="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              textDecoration: 'none',
-            }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: isAdmin
-                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                  : 'linear-gradient(135deg, #0071E3 0%, #4338ca 100%)',
+                background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: isAdmin
-                  ? '0 4px 12px rgba(239, 68, 68, 0.3)'
-                  : '0 4px 12px rgba(0, 113, 227, 0.3)',
+                color: '#FFFFFF',
+                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.3)',
               }}
             >
-              <ShieldCheck size={20} strokeWidth={2.2} />
+              <ShieldCheck size={22} strokeWidth={2.2} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 800,
-                  letterSpacing: '-0.02em',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                TRUST<span style={{ color: isAdmin ? '#ef4444' : 'var(--primary)' }}>PAY</span>
-              </span>
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                {isAdmin ? 'Security Console' : 'Personal Banking'}
-              </span>
-            </div>
-          </NavLink>
-
-          {/* Mobile close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="mobile-sidebar-close"
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              padding: '6px',
-              borderRadius: '8px',
-            }}
-            aria-label="Close sidebar"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Navigation Items */}
-        <div
-          style={{
-            flex: 1,
-            padding: '20px 14px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px',
-            overflowY: 'auto',
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'var(--text-muted)',
-                padding: '0 12px',
-                marginBottom: '8px',
-              }}
-            >
-              {isAdmin ? 'Surveillance Mesh' : 'Financial Services'}
-            </div>
-
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {links.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => {
-                      if (window.innerWidth < 1024) onClose();
-                    }}
-                    className={({ isActive }) =>
-                      `sidebar-link ${isActive ? 'active' : ''}`
-                    }
-                    style={({ isActive }) => ({
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      borderRadius: '12px',
-                      fontSize: '13px',
-                      fontWeight: isActive ? 600 : 500,
-                      textDecoration: 'none',
-                      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      backgroundColor: isActive ? 'var(--bg-card-subtle)' : 'transparent',
-                      border: isActive
-                        ? '1px solid var(--border-color)'
-                        : '1px solid transparent',
-                      transition: 'all 0.15s ease',
-                    })}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Icon size={17} strokeWidth={2} />
-                      <span>{link.label}</span>
-                    </div>
-                    <ChevronRight size={13} style={{ opacity: 0.4 }} />
-                  </NavLink>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div>
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'var(--text-muted)',
-                padding: '0 12px',
-                marginBottom: '8px',
-              }}
-            >
-              Account & Security
-            </div>
-
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <NavLink
-                to="/profile"
-                onClick={() => {
-                  if (window.innerWidth < 1024) onClose();
-                }}
-                className={({ isActive }) =>
-                  `sidebar-link ${isActive ? 'active' : ''}`
-                }
-                style={({ isActive }) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: isActive ? 600 : 500,
-                  textDecoration: 'none',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  backgroundColor: isActive ? 'var(--bg-card-subtle)' : 'transparent',
-                  border: isActive
-                    ? '1px solid var(--border-color)'
-                    : '1px solid transparent',
-                })}
-              >
-                <User size={17} />
-                <span>Profile & Device UUID</span>
-              </NavLink>
-
-              <NavLink
-                to="/"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  textDecoration: 'none',
-                  color: 'var(--text-secondary)',
-                }}
-              >
-                <ExternalLink size={16} />
-                <span>Public Showcase</span>
-              </NavLink>
-            </nav>
-          </div>
-        </div>
-
-        {/* Bottom Profile Drawer & Sign Out */}
-        <div
-          style={{
-            padding: '16px',
-            borderTop: '1px solid var(--border-color)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            <div
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--bg-card-subtle)',
-                border: '1px solid var(--border-color)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '12px',
-                color: 'var(--text-primary)',
-                flexShrink: 0,
-              }}
-            >
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'TP'}
-            </div>
-
-            <div style={{ minWidth: 0 }}>
+            <div>
               <div
                 style={{
-                  fontSize: '13px',
-                  fontWeight: 600,
+                  fontSize: '17px',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
                   color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                 }}
               >
-                {user?.name || 'Authorized User'}
+                TRUSTPAY
               </div>
               <div
                 style={{
                   fontSize: '11px',
-                  color: 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  fontWeight: 600,
+                  color: isAdmin ? 'var(--color-danger)' : 'var(--primary)',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
                 }}
               >
-                {user?.email || 'user@trustpay.internal'}
+                {isAdmin ? 'Sentinel Admin' : 'Secure Banking'}
               </div>
             </div>
           </div>
 
+          {/* Close button on mobile */}
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={onClose}
+            className="mobile-close-btn"
             style={{
               background: 'none',
               border: 'none',
               color: 'var(--text-muted)',
               cursor: 'pointer',
-              padding: '6px',
-              borderRadius: '8px',
-              transition: 'color 0.15s ease',
+              display: 'none',
+              padding: '4px',
             }}
-            title="Sign out of account"
-            aria-label="Sign out"
+            aria-label="Close navigation sidebar"
           >
-            <LogOut size={16} />
+            <X size={20} />
           </button>
         </div>
+
+        {/* Navigation Items */}
+        <div style={{ padding: '20px 14px', flex: 1, overflowY: 'auto' }}>
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              padding: '0 12px 10px',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {isAdmin ? 'Risk & Operations' : 'Main Menu'}
+          </div>
+
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {links.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => onClose && onClose()}
+                  end={link.to === '/dashboard' || link.to === '/admin'}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '14px',
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--primary)' : 'transparent',
+                    transition: 'all var(--transition-fast)',
+                    textDecoration: 'none',
+                  })}
+                >
+                  <Icon size={18} strokeWidth={2} />
+                  <span>{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          <div
+            style={{
+              height: '1px',
+              backgroundColor: 'var(--border-color)',
+              margin: '20px 10px',
+            }}
+          />
+
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              padding: '0 12px 10px',
+              letterSpacing: '0.05em',
+            }}
+          >
+            Account
+          </div>
+
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <NavLink
+              to="/profile"
+              onClick={() => onClose && onClose()}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '14px',
+                fontWeight: isActive ? 600 : 500,
+                color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                backgroundColor: isActive ? 'var(--primary)' : 'transparent',
+                transition: 'all var(--transition-fast)',
+                textDecoration: 'none',
+              })}
+            >
+              <User size={18} strokeWidth={2} />
+              <span>Profile & Security</span>
+            </NavLink>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: 'var(--color-danger)',
+                backgroundColor: 'transparent',
+                border: 'none',
+                width: '100%',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-danger-bg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <LogOut size={18} strokeWidth={2} />
+              <span>Sign Out</span>
+            </button>
+          </nav>
+        </div>
+
+        {/* Security Indicator Footer */}
+        <div
+          style={{
+            padding: '16px 20px',
+            borderTop: '1px solid var(--border-color)',
+            backgroundColor: 'var(--bg-card-subtle)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-success)',
+                boxShadow: '0 0 8px rgba(22, 163, 74, 0.6)',
+              }}
+            />
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+              }}
+            >
+              {isAdmin ? 'Sentinel AI Active' : 'Account protected'}
+            </span>
+          </div>
+          <div
+            style={{
+              fontSize: '11px',
+              color: 'var(--text-muted)',
+              marginTop: '4px',
+            }}
+          >
+            256-bit TLS • Real-time ML
+          </div>
+        </div>
       </aside>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .sidebar {
+            position: fixed !important;
+            left: 0;
+            top: 0;
+            transform: translateX(-100%);
+            box-shadow: var(--shadow-xl);
+          }
+          .sidebar.open {
+            transform: translateX(0);
+          }
+          .mobile-close-btn {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </>
   );
 };

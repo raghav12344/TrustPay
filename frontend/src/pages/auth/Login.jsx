@@ -1,23 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
-import {
-  ShieldCheck,
-  Lock,
-  Mail,
-  Eye,
-  EyeOff,
-  Loader2,
-  ArrowRight,
-  ShieldAlert,
-  Cpu,
-  Sun,
-  Moon,
-  ArrowLeft,
-  UserCheck,
-} from 'lucide-react';
+import { ShieldCheck, Lock, Mail, Eye, EyeOff, Loader2, ArrowRight, ShieldAlert, Cpu } from 'lucide-react';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,28 +10,14 @@ export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeRoleTab, setActiveRoleTab] = useState('CUSTOMER');
 
   const { login } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const { success } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Check if session expired
   const sessionExpired = new URLSearchParams(location.search).get('sessionExpired') === 'true';
-
-  const handleDemoFill = (role) => {
-    setActiveRoleTab(role);
-    if (role === 'ADMIN') {
-      setEmail('admin@trustpay.com');
-      setPassword('admin123');
-    } else {
-      setEmail('rohan@example.com');
-      setPassword('password123');
-    }
-    setErrorMsg('');
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,192 +47,214 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-300">
-      
-      {/* Left Column: Apple Obsidian Showcase */}
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        backgroundColor: 'var(--bg-main)',
+      }}
+    >
+      {/* Left Column: Premium Brand & Security Visual */}
       <div
-        className="hidden lg:flex lg:w-1/2 p-14 flex-col justify-between relative overflow-hidden select-none"
+        className="auth-brand-col"
         style={{
-          background: 'radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.18) 0%, transparent 55%), radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.22) 0%, transparent 60%), #040711',
-          borderRight: '1px solid var(--border-color)',
+          flex: '1 1 50%',
+          backgroundColor: '#0F172A',
+          backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.25) 0%, transparent 60%), radial-gradient(circle at 90% 80%, rgba(30, 58, 138, 0.4) 0%, transparent 60%)',
+          color: '#FFFFFF',
+          padding: '60px 48px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        {/* Ambient Top Glow */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
-
-        {/* Top Header */}
-        <div className="flex items-center justify-between relative z-10">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-200">
-              <ShieldCheck className="text-white" size={22} />
-            </div>
-            <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
-              TRUST<span className="text-cyan-400">PAY</span>
-            </span>
-          </Link>
-
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-full border border-white/10 hover:border-white/20"
+        {/* Top Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.4)',
+            }}
           >
-            <ArrowLeft size={14} />
-            <span>Back to Showcase</span>
-          </Link>
+            <ShieldCheck size={24} color="#FFFFFF" strokeWidth={2.2} />
+          </div>
+          <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.04em' }}>
+            TRUSTPAY
+          </span>
         </div>
 
-        {/* Center Content */}
-        <div className="max-w-md my-auto relative z-10 py-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-400/10 border border-cyan-400/25 text-cyan-400 text-xs font-mono font-semibold tracking-wider mb-6">
+        {/* Center Hero Content */}
+        <div style={{ maxWidth: '480px', margin: '40px 0' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'rgba(37, 99, 235, 0.2)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#93C5FD',
+              fontSize: '12px',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              marginBottom: '20px',
+            }}
+          >
             <Cpu size={14} />
-            <span>SENTINEL AI CLOUD DEFENSE</span>
+            <span>AI-POWERED FRAUD SENTINEL</span>
           </div>
 
-          <h1 className="text-4xl font-extrabold text-white tracking-tight leading-tight mb-4">
-            Next-generation banking.
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-              Protected by dual AI.
-            </span>
+          <h1
+            style={{
+              fontSize: '36px',
+              fontWeight: 800,
+              lineHeight: 1.2,
+              color: '#FFFFFF',
+              letterSpacing: '-0.02em',
+              marginBottom: '16px',
+            }}
+          >
+            Smarter transactions.<br />Safer banking.
           </h1>
 
-          <p className="text-slate-400 text-base leading-relaxed mb-8">
-            Experience non-blocking event-driven transactions backed by LightGBM anomaly scoring,
-            Groq LPU forensic reasoning, and an immutable BCNF MySQL ledger.
+          <p
+            style={{
+              fontSize: '16px',
+              color: '#94A3B8',
+              lineHeight: 1.6,
+              marginBottom: '32px',
+            }}
+          >
+            Real-time transaction monitoring and intelligent risk analysis detecting suspicious patterns before fraud occurs.
           </p>
 
-          {/* Quick Feature Checklist */}
-          <div className="space-y-3.5 text-sm text-slate-300">
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Sub-2ms median LightGBM tree classification</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#E2E8F0', fontSize: '14px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
+              Sub-millisecond ML risk scoring with LightGBM
             </div>
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
-              <span>RabbitMQ asynchronous queue decoupling (<span className="text-blue-300 font-mono">202 Accepted</span>)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#E2E8F0', fontSize: '14px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3B82F6' }} />
+              Adaptive device fingerprinting and geolocation verification
             </div>
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span>Redis 7 sliding-window rate limiting &amp; caching</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-purple-400" />
-              <span>Row-level locking (<span className="text-purple-300 font-mono">FOR UPDATE</span>) ACID consistency</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#E2E8F0', fontSize: '14px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#F59E0B' }} />
+              Automated high-risk alerting & rapid admin review workflows
             </div>
           </div>
         </div>
 
         {/* Bottom Security Note */}
-        <div className="flex items-center justify-between text-xs text-slate-500 font-mono pt-6 border-t border-white/10 relative z-10">
-          <span>TLS 1.3 • AES-256 • BCNF MySQL 8</span>
-          <span className="text-cyan-400 font-semibold">MNNIT CSE • Section E2</span>
+        <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Lock size={14} />
+          <span>Enterprise-grade end-to-end encryption & ISO 27001 standards</span>
         </div>
       </div>
 
-      {/* Right Column: Apple-Grade Glass Sign In Card */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative">
-        
-        {/* Mobile Top Navigation & Theme Toggle */}
-        <div className="absolute top-6 right-6 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-200"
-            style={{
-              backgroundColor: 'var(--bg-card-subtle)',
-              borderColor: 'var(--border-color)',
-              color: 'var(--text-secondary)',
-            }}
-            aria-label="Toggle dark/light mode"
-          >
-            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-        </div>
-
-        <div className="w-full max-w-md">
-          
-          {/* Mobile Brand Link */}
-          <div className="lg:hidden mb-8 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-                <ShieldCheck size={18} />
-              </div>
-              <span className="font-extrabold text-lg tracking-tight">TRUSTPAY</span>
-            </Link>
-
-            <Link to="/" className="text-xs font-semibold text-[var(--primary)] flex items-center gap-1">
-              <ArrowLeft size={13} />
-              <span>Back</span>
-            </Link>
-          </div>
-
+      {/* Right Column: Login Form */}
+      <div
+        style={{
+          flex: '1 1 50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 24px',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '420px',
+          }}
+        >
           {sessionExpired && (
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-medium mb-6 flex items-center gap-2.5">
-              <ShieldAlert size={16} className="shrink-0" />
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-warning-bg)',
+                border: '1px solid var(--color-warning-border)',
+                color: 'var(--color-warning)',
+                fontSize: '13px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <ShieldAlert size={16} />
               <span>Your session has expired. Please sign in again.</span>
             </div>
           )}
 
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] mb-2">
-              Sign in to TrustPay
+          <div style={{ marginBottom: '28px' }}>
+            <h2
+              style={{
+                fontSize: '26px',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.02em',
+                marginBottom: '6px',
+              }}
+            >
+              Sign In
             </h2>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Select your role or enter credentials to access your banking account.
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+              Enter your credentials to access your TrustPay account.
             </p>
           </div>
 
-          {/* Role Switcher & Demo Auto-Fill Tabs */}
-          <div className="p-1 rounded-2xl bg-[var(--bg-card-subtle)] border border-[var(--border-color)] grid grid-cols-2 gap-1 mb-6">
-            <button
-              type="button"
-              onClick={() => handleDemoFill('CUSTOMER')}
-              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                activeRoleTab === 'CUSTOMER'
-                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <UserCheck size={14} />
-              <span>Demo Customer</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoFill('ADMIN')}
-              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                activeRoleTab === 'ADMIN'
-                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <ShieldAlert size={14} className="text-amber-500" />
-              <span>Demo Admin</span>
-            </button>
-          </div>
-
           {errorMsg && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-medium mb-6 flex items-center gap-2.5 animate-fade-in">
-              <ShieldAlert size={16} className="shrink-0" />
+            <div
+              className="animate-fade-in"
+              style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-danger-bg)',
+                border: '1px solid var(--color-danger-border)',
+                color: 'var(--color-danger)',
+                fontSize: '13px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <ShieldAlert size={16} flexShrink={0} />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* Email Field */}
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label" htmlFor="email">
                 Email Address
               </label>
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
                 <Mail
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+                  color="var(--text-muted)"
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
                 />
                 <input
                   id="email"
                   type="email"
-                  className="form-input pl-10"
+                  className="form-input"
+                  style={{ paddingLeft: '38px' }}
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -271,30 +264,39 @@ export const Login = () => {
               </div>
             </div>
 
-            {/* Password Field */}
             <div className="form-group">
-              <div className="flex justify-between items-center mb-1">
-                <label className="form-label mb-0" htmlFor="password">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="form-label" htmlFor="password">
                   Password
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setErrorMsg('Demo accounts use default seeded passwords.')}
-                  className="text-xs font-semibold text-[var(--primary)] hover:underline"
+                <a
+                  href="#forgot"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setErrorMsg('Please contact system administrator for password recovery.');
+                  }}
+                  style={{ fontSize: '12px', color: 'var(--primary)' }}
                 >
                   Forgot password?
-                </button>
+                </a>
               </div>
 
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
                 <Lock
                   size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+                  color="var(--text-muted)"
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                  }}
                 />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className="form-input pl-10 pr-10"
+                  className="form-input"
+                  style={{ paddingLeft: '38px', paddingRight: '40px' }}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -304,7 +306,19 @@ export const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -312,35 +326,57 @@ export const Login = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
-              className="btn btn-apple-primary w-full py-3.5 font-bold text-sm shadow-lg mt-2"
+              className="btn btn-primary btn-lg"
               disabled={loading}
+              style={{ width: '100%', marginTop: '10px' }}
             >
               {loading ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={18} className="animate-spin" />
                   <span>Authenticating...</span>
                 </>
               ) : (
                 <>
                   <span>Sign In</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
 
-          {/* Footer Link */}
-          <div className="mt-8 pt-6 border-t border-[var(--border-color)] text-center text-sm text-[var(--text-secondary)]">
-            Don't have an account yet?{' '}
-            <Link to="/register" className="font-bold text-[var(--primary)] hover:underline">
+          <div
+            style={{
+              marginTop: '28px',
+              paddingTop: '20px',
+              borderTop: '1px solid var(--border-color)',
+              textAlign: 'center',
+              fontSize: '14px',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Don't have an account?{' '}
+            <Link
+              to="/register"
+              style={{
+                fontWeight: 600,
+                color: 'var(--primary)',
+              }}
+            >
               Create an account
             </Link>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .auth-brand-col {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

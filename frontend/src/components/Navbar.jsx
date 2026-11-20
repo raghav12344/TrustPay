@@ -21,7 +21,9 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
   return (
     <header
       style={{
-        height: '64px',
+        height: '68px',
+        backgroundColor: 'var(--bg-card)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '0 28px',
         display: 'flex',
         alignItems: 'center',
@@ -29,11 +31,6 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        backgroundColor: 'var(--glass-bg)',
-        backdropFilter: 'var(--glass-blur)',
-        WebkitBackdropFilter: 'var(--glass-blur)',
-        borderBottom: '1px solid var(--border-color)',
-        transition: 'background-color 0.2s ease',
       }}
     >
       {/* Left: Mobile Toggle & Page Title */}
@@ -41,58 +38,57 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
         <button
           type="button"
           onClick={onOpenSidebar}
+          className="btn-ghost menu-toggle-btn"
           style={{
-            background: 'var(--bg-card-subtle)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '10px',
-            padding: '7px',
-            color: 'var(--text-secondary)',
+            padding: '8px',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
             cursor: 'pointer',
-            display: 'flex',
+            display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          className="lg:hidden"
           aria-label="Toggle navigation menu"
         >
-          <Menu size={18} />
+          <Menu size={20} />
         </button>
 
-        <h2
-          style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            color: 'var(--text-primary)',
-          }}
-        >
-          {title}
-        </h2>
+        <div>
+          <h2
+            style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {title}
+          </h2>
+        </div>
       </div>
 
       {/* Right: Actions & User Info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         {/* Theme Toggle */}
         <button
           type="button"
           onClick={toggleTheme}
+          className="btn-ghost"
           style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
+            width: '38px',
+            height: '38px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid var(--border-color)',
-            backgroundColor: 'var(--bg-card-subtle)',
-            color: 'var(--text-secondary)',
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            color: 'var(--text-secondary)',
           }}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {/* User Pill */}
@@ -101,36 +97,33 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            padding: '4px 12px 4px 6px',
-            borderRadius: '999px',
-            backgroundColor: 'var(--bg-card)',
+            padding: '6px 10px 6px 6px',
+            borderRadius: 'var(--radius-full)',
             border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-xs)',
+            backgroundColor: 'var(--bg-card-subtle)',
           }}
         >
           <div
             style={{
-              width: '28px',
-              height: '28px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
+              backgroundColor: isAdmin ? 'var(--color-danger)' : 'var(--primary)',
+              color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '11px',
+              fontSize: '12px',
               fontWeight: 700,
-              color: '#ffffff',
-              background: isAdmin
-                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                : 'linear-gradient(135deg, #0071E3 0%, #4338ca 100%)',
             }}
           >
             {getInitials(user?.name)}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="user-name-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>
             <span
               style={{
-                fontSize: '12px',
+                fontSize: '13px',
                 fontWeight: 600,
                 color: 'var(--text-primary)',
                 lineHeight: 1.2,
@@ -140,12 +133,11 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
             </span>
             <span
               style={{
-                fontSize: '10px',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
+                fontSize: '11px',
+                fontWeight: 600,
+                color: isAdmin ? 'var(--color-danger)' : 'var(--primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                color: isAdmin ? '#ef4444' : 'var(--primary)',
               }}
             >
               {role || 'CUSTOMER'}
@@ -153,6 +145,19 @@ export const Navbar = ({ onOpenSidebar, title = 'TrustPay' }) => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .menu-toggle-btn {
+            display: flex !important;
+          }
+        }
+        @media (max-width: 520px) {
+          .user-name-wrapper {
+            display: none !important;
+          }
+        }
+      `}</style>
     </header>
   );
 };

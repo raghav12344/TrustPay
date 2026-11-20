@@ -109,7 +109,7 @@ export const AdminDashboard = () => {
 
   return (
     <div>
-      {/* Forensic Surveillance Header */}
+      {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -121,50 +121,20 @@ export const AdminDashboard = () => {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '3px 10px',
-                borderRadius: '999px',
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                background: 'rgba(239, 68, 68, 0.12)',
-                color: '#ef4444',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-danger)',
+                boxShadow: '0 0 10px rgba(220, 38, 38, 0.7)',
               }}
-            >
-              <span
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#ef4444',
-                  boxShadow: '0 0 8px #ef4444',
-                }}
-              />
-              SENTINEL SURVEILLANCE ACTIVE
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Sub-15ms AI Evaluation
-            </span>
+            />
+            <h1 style={{ fontSize: '26px', fontWeight: 800 }}>Fraud Monitoring</h1>
           </div>
-
-          <h1
-            style={{
-              fontSize: 'clamp(24px, 3.5vw, 32px)',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Threat Surveillance Cockpit
-          </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Live triage queues, multi-layer risk scoring, and zero-knowledge ledger dispute resolution.
+          <p style={{ fontSize: '14px', marginTop: '4px' }}>
+            Real-time fraud surveillance, suspicious transaction queues, and automated risk scoring.
           </p>
         </div>
 
@@ -176,7 +146,7 @@ export const AdminDashboard = () => {
             disabled={loading}
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Sync</span>
+            <span>Refresh Telemetry</span>
           </button>
 
           <button
@@ -189,7 +159,7 @@ export const AdminDashboard = () => {
           </button>
 
           <Link to="/admin/fraud-alerts" className="btn btn-primary btn-sm">
-            <span>All Alerts</span>
+            <span>View All Alerts</span>
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -199,7 +169,7 @@ export const AdminDashboard = () => {
         <ErrorState message={error} onRetry={fetchAlerts} />
       ) : (
         <>
-          {/* Stat Cards Bento Grid */}
+          {/* Stat Cards */}
           <div
             style={{
               display: 'grid',
@@ -211,7 +181,7 @@ export const AdminDashboard = () => {
             <StatCard
               title="Total Suspicious Events"
               value={totalAlerts}
-              subtitle="Logged by Sentinel AI"
+              subtitle="Logged by ML Sentinel"
               icon={ShieldAlert}
               iconBg="var(--color-danger-bg)"
               iconColor="var(--color-danger)"
@@ -229,7 +199,7 @@ export const AdminDashboard = () => {
             />
 
             <StatCard
-              title="High Risk Incidents"
+              title="High Risk Alerts"
               value={highRiskCount}
               subtitle="Critical probability >= 80%"
               icon={AlertTriangle}
@@ -249,8 +219,8 @@ export const AdminDashboard = () => {
             />
           </div>
 
-          {/* High Priority Alerts Table Container */}
-          <div className="card" style={{ padding: 'clamp(20px, 3.5vw, 28px)' }}>
+          {/* High Priority Alerts Table */}
+          <div className="card" style={{ padding: '24px' }}>
             <div className="card-header">
               <div>
                 <h2 className="card-title">Priority Fraud Alerts Queue</h2>
@@ -280,7 +250,7 @@ export const AdminDashboard = () => {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Ref ID</th>
+                      <th>Alert / Ref</th>
                       <th>Customer Details</th>
                       <th>Amount</th>
                       <th>Risk Score</th>
@@ -292,7 +262,6 @@ export const AdminDashboard = () => {
                   <tbody>
                     {alerts.slice(0, 8).map((alert) => {
                       const isOpen = (alert.alert_status || 'OPEN').toUpperCase() === 'OPEN';
-                      const score = alert.risk_score || 0;
                       return (
                         <tr key={alert.transaction_id}>
                           <td>
@@ -300,7 +269,7 @@ export const AdminDashboard = () => {
                               <span
                                 style={{
                                   fontFamily: 'var(--font-mono)',
-                                  fontWeight: 700,
+                                  fontWeight: 600,
                                   color: 'var(--primary)',
                                   fontSize: '13px',
                                 }}
@@ -325,23 +294,16 @@ export const AdminDashboard = () => {
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: '4px',
-                                  marginTop: '2px',
                                 }}
                               >
                                 <Phone size={11} />
-                                <span>{alert.phone || '—'}</span>
+                                {alert.phone || '—'}
                               </div>
                             </div>
                           </td>
 
                           <td>
-                            <span
-                              style={{
-                                fontWeight: 700,
-                                fontSize: '14px',
-                                letterSpacing: '-0.01em',
-                              }}
-                            >
+                            <span style={{ fontWeight: 700, fontSize: '14px' }}>
                               {formatINR(alert.amount)}
                             </span>
                           </td>
@@ -350,7 +312,7 @@ export const AdminDashboard = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <div
                                 style={{
-                                  width: '56px',
+                                  width: '54px',
                                   height: '6px',
                                   backgroundColor: 'var(--border-color)',
                                   borderRadius: '999px',
@@ -359,22 +321,15 @@ export const AdminDashboard = () => {
                               >
                                 <div
                                   style={{
-                                    width: `${Math.min(score, 100)}%`,
+                                    width: `${Math.min(alert.risk_score || 0, 100)}%`,
                                     height: '100%',
                                     backgroundColor:
-                                      score >= 80 ? '#ef4444' : score >= 50 ? '#f59e0b' : '#10b981',
-                                    borderRadius: '999px',
+                                      (alert.risk_score || 0) >= 80 ? '#DC2626' : '#D97706',
                                   }}
                                 />
                               </div>
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  fontWeight: 700,
-                                  fontFamily: 'var(--font-mono)',
-                                }}
-                              >
-                                {score}/100
+                              <span style={{ fontSize: '12px', fontWeight: 700 }}>
+                                {alert.risk_score || 0}/100
                               </span>
                             </div>
                           </td>
@@ -398,7 +353,7 @@ export const AdminDashboard = () => {
                               <Link
                                 to={`/admin/fraud-alerts/${alert.transaction_id}`}
                                 className="btn btn-secondary btn-sm"
-                                style={{ padding: '6px 12px' }}
+                                style={{ padding: '6px 10px' }}
                                 title="Inspect full alert details"
                               >
                                 <Eye size={14} />

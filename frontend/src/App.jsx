@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './components/DashboardLayout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Landing & Marketing Page
 import LandingPage from './pages/LandingPage';
@@ -28,7 +29,8 @@ import Analytics from './pages/admin/Analytics';
 
 export function App() {
   return (
-    <Routes>
+    <ErrorBoundary>
+      <Routes>
       {/* Public Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -163,6 +165,7 @@ export function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  </ErrorBoundary>
   );
 }
 
